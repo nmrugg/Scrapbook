@@ -3,7 +3,7 @@
     var canvas_manager,
         canvas_el = document.getElementById("canvas");
     
-    canvas_manager = (function ()
+    canvas_manager = (function (canvas_el)
     {
         var canvas = {
             height: 600,
@@ -46,6 +46,7 @@
                 shrink_by;
             
             obj = {
+                angle:     0,
                 composite: "source-over",
                 opacity:   1,
                 type:      type,
@@ -96,10 +97,68 @@
             img.src = dataURI;
         }
         
+        function get_relative_x_y(e)
+        {
+            var posX = 0,
+                posY = 0;
+            
+            if (e.pageX || e.pageY) {
+                posX = e.pageX;
+                posY = e.pageY;
+            } else if (e.clientX || e.clientY) {
+                posX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+                posY = e.clientY + document.body.scrollTop  + document.documentElement.scrollTop;
+            }
+            
+            return {
+                x: posX - canvas_el.offsetLeft,
+                y: posY - canvas_el.offsetTop
+            };
+        }
+        
+        canvas_el.onmousemove = function (e)
+        {
+            var cur_layer,
+                cur_pos = get_relative_x_y(e),
+                cur_x,
+                cur_y,
+                i,
+                layer_count,
+                pixel;
+            
+            cur_x = cur_pos.x;
+            cur_y = cur_pos.y;
+            ///TODO: Only do this when the mouse is not pressed.
+            
+            pixel = context.getImageData(cur_x, cur_y, 1, 1);
+            
+            /// Is the cursor hovering over something?
+            if (pixel.data[3] > 0) {
+                i = layers.length - 1;
+                
+                /// Go through the layers backward (starting with the top).
+                while (i >= 0) {
+                    cur_layer = layers[i];
+                    /// If visible
+                    ///TODO: Make a bounding box measurement for rotated elements.
+                    if (cur_layer.angle === 0) {
+                        if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_layer.x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_layer.y) {
+                            document.title = i;
+                            break;
+                        }
+                    }
+                    
+                    --i;
+                }
+            }
+            
+        }
+        
         return {
-            add_image: add_image
+            add_image:        add_image,
+            get_relative_x_y: get_relative_x_y
         };
-    }());
+    }(canvas_el));
     
     
     function handleReadernotification(e)
@@ -146,20 +205,10 @@
             reader.onprogress     = handleReadernotification;
             reader.onloadstart    = handleReadernotification;
             reader.onloadend      = function (e2)
-            {
-                var posX = 0,
-                    posY = 0;
-                
-                if (e.pageX || e.pageY) {
-                    posX = e.pageX;
-                    posY = e.pageY;
-                } else if (e.clientX || e.clientY) {
-                    posX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-                    posY = e.clientY + document.body.scrollTop  + document.documentElement.scrollTop;
-                }
-                
+            {   
+                var cur_pos = canvas_manager.get_relative_x_y(e);
                 /// offset_count moves the images over slightly when dropping more than one at a time in order to see them all  .
-                canvas_manager.add_image(e2.target.result, (posX - canvas_el.offsetLeft) + (offset_count * 15), (posY - canvas_el.offsetTop) + (offset_count * 15));
+                canvas_manager.add_image(e2.target.result, cur_pos.x + (offset_count * 15), cur_pos.y + (offset_count * 15));
                 ++offset_count;
             };
             
