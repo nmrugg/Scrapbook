@@ -1,18 +1,22 @@
 (function ()
 {
-    var canvas,
+    var canvas_manager,
         canvas_el = document.getElementById("canvas");
     
-    canvas = (function ()
+    canvas_manager = (function ()
     {
-        var context = canvas_el.getContext("2d"),
+        var canvas = {
+            height: 600,
+            width:  800
+        },
+            context = canvas_el.getContext("2d"),
             layers = [];
         
         canvas_el.style.background = "#FFF";
         
         /// Width and height must be set with setAttribute() to avoid stretching.
-        canvas_el.setAttribute("width",  "800");
-        canvas_el.setAttribute("height", "600");
+        canvas_el.setAttribute("width",  canvas.width);
+        canvas_el.setAttribute("height", canvas.height);
         
         function redraw()
         {
@@ -29,7 +33,7 @@
                 context.globalCompositeOperation = cur_layer.composite;
                 
                 /// If an image
-                context.drawImage(cur_layer.img, cur_layer.x, cur_layer.y);
+                context.drawImage(cur_layer.img, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
                 
                 context.restore();
                 ++i;
@@ -38,15 +42,40 @@
         
         function create_new_layer(type, img, x, y, text)
         {
-            return {
+            var obj,
+                shrink_by;
+            
+            obj = {
                 composite: "source-over",
-                img:       img,
                 opacity:   1,
-                text:      text,
                 type:      type,
                 x:         x,
                 y:         y
-            };
+            }
+            
+            if (type == "img") {
+                obj.img    = img;
+                obj.orig_h = img.height;
+                obj.orig_w = img.width;
+                
+                if (obj.orig_h > canvas.height || obj.orig_w > canvas.width) {
+                    /// Is the height the biggest problem?
+                    if (obj.orig_h - canvas.height > obj.orig_w - canvas.width) {
+                        shrink_by = canvas.height / obj.orig_h;
+                    } else {
+                        shrink_by = canvas.width / obj.orig_w;
+                    }
+                    obj.height = Math.floor(obj.orig_h * shrink_by);
+                    obj.width  = Math.floor(obj.orig_w * shrink_by);
+                } else {
+                    obj.height = obj.orig_h;
+                    obj.width  = obj.orig_w;
+                }
+            } else {
+                obj.text = text;
+            }
+            
+            return obj;
         }
     
         function add_image(dataURI, x, y)
@@ -54,7 +83,13 @@
             var img = new Image();
             img.onload = function ()
             {
-                /// Set original width/height
+                /// Prevent an image from being created off of the page (this could happen when dropping multiple images).
+                if (x > canvas.width - 5) {
+                    x = canvas.width - 5;
+                }
+                if (y > canvas.height - 5) {
+                    y = canvas.height - 5;
+                }
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 redraw();
             };
@@ -88,6 +123,7 @@
             file,
             files = e.dataTransfer.files,
             i,
+            offset_count = 0,
             reader;
         
         e.stopPropagation();
@@ -122,7 +158,9 @@
                     posY = e.clientY + document.body.scrollTop  + document.documentElement.scrollTop;
                 }
                 
-                canvas.add_image(e2.target.result, posX - canvas_el.offsetLeft, posY - canvas_el.offsetTop);
+                /// offset_count moves the images over slightly when dropping more than one at a time in order to see them all  .
+                canvas_manager.add_image(e2.target.result, (posX - canvas_el.offsetLeft) + (offset_count * 15), (posY - canvas_el.offsetTop) + (offset_count * 15));
+                ++offset_count;
             };
             
             /// Begin reading in files.
