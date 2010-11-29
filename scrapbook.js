@@ -123,33 +123,27 @@
                 cur_x,
                 cur_y,
                 i,
-                layer_count,
-                pixel;
+                layer_count;
             
             cur_x = cur_pos.x;
             cur_y = cur_pos.y;
             ///TODO: Only do this when the mouse is not pressed.
-            
-            pixel = context.getImageData(cur_x, cur_y, 1, 1);
-            
             /// Is the cursor hovering over something?
-            if (pixel.data[3] > 0) {
-                i = layers.length - 1;
-                
-                /// Go through the layers backward (starting with the top).
-                while (i >= 0) {
-                    cur_layer = layers[i];
-                    /// If visible
-                    ///TODO: Make a bounding box measurement for rotated elements.
-                    if (cur_layer.angle === 0) {
-                        if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_layer.x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_layer.y) {
-                            document.title = i;
-                            break;
-                        }
+            i = layers.length - 1;
+            
+            /// Go through the layers backward (starting with the top).
+            while (i >= 0) {
+                cur_layer = layers[i];
+                /// If visible
+                ///TODO: Make a bounding box measurement for rotated elements.
+                if (cur_layer.angle === 0) {
+                    if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
+                        document.title = i;
+                        break;
                     }
-                    
-                    --i;
                 }
+                
+                --i;
             }
             
         }
