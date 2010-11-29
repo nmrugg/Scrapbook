@@ -5,7 +5,8 @@
     
     canvas_manager = (function (canvas_el)
     {
-        var canvas = {
+        var active_layer = -1,
+            canvas = {
             height: 600,
             width:  800
         },
@@ -20,6 +21,8 @@
         
         function redraw()
         {
+            ///TODO: redraw() should take dimension or a layer as a parameter and only redraw that part.
+            
             var cur_layer,
                 i = 0,
                 layer_count = layers.length;
@@ -34,6 +37,18 @@
                 
                 /// If an image
                 context.drawImage(cur_layer.img, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
+                
+                /// Is this the active layer?
+                if (i === active_layer) {
+                    /// Determine the type of decorations to draw.
+                    context.moveTo(cur_layer.x - 5.5, cur_layer.y - 5.5);
+                    context.lineTo(cur_layer.x + 5.5, cur_layer.y - 5.5);
+                    context.lineTo(cur_layer.x + 5.5, cur_layer.y + 5.5);
+                    context.lineTo(cur_layer.x - 5.5, cur_layer.y + 5.5);
+                    context.lineTo(cur_layer.x - 5.5, cur_layer.y - 5.5);
+                    context.strokeStyle = "rgba(0,0,0,.5)";
+                    context.stroke();
+                }
                 
                 context.restore();
                 ++i;
@@ -142,8 +157,13 @@
                         break;
                     }
                 }
-                
                 --i;
+            }
+            
+            /// Is the mouse hovering over a layer?
+            if (active_layer !== i) {
+                active_layer = i
+                redraw();
             }
             
         }
