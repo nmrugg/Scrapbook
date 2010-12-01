@@ -5,13 +5,16 @@
     
     canvas_manager = (function (canvas_el)
     {
-        var active_layer = -1,
-            canvas = {
+        var canvas = {
             height: 600,
             width:  800
         },
             context = canvas_el.getContext("2d"),
-            layers = [];
+            layers = [],
+            
+            hover_layer    = -1,
+            last_layer     = -1,
+            selected_layer = -1;
         
         canvas_el.style.background = "#FFF";
         
@@ -27,6 +30,11 @@
                 i = 0,
                 layer_count = layers.length;
             
+            ///TODO: Use last_layer to figure out what parts need to be redrawn.
+            
+            /// Redraw the entire canvas.
+            canvas_el.setAttribute("width",  canvas.width);
+            
             while (i < layer_count) {
                 /// If visible
                 cur_layer = layers[i];
@@ -38,20 +46,21 @@
                 /// If an image
                 context.drawImage(cur_layer.img, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
                 
-                /// Is this the active layer?
-                if (i === active_layer) {
-                    /// Determine the type of decorations to draw.
-                    context.moveTo(cur_layer.x - 5.5, cur_layer.y - 5.5);
-                    context.lineTo(cur_layer.x + 5.5, cur_layer.y - 5.5);
-                    context.lineTo(cur_layer.x + 5.5, cur_layer.y + 5.5);
-                    context.lineTo(cur_layer.x - 5.5, cur_layer.y + 5.5);
-                    context.lineTo(cur_layer.x - 5.5, cur_layer.y - 5.5);
-                    context.strokeStyle = "rgba(0,0,0,.5)";
-                    context.stroke();
-                }
-                
                 context.restore();
                 ++i;
+            }
+            
+            /// Is this the active layer?
+            if (selected_layer >= 0) {
+                cur_layer = layers[selected_layer];
+                /// Determine the type of decorations to draw.
+                context.moveTo(cur_layer.x - 5.5, cur_layer.y - 5.5);
+                context.lineTo(cur_layer.x + 5.5, cur_layer.y - 5.5);
+                context.lineTo(cur_layer.x + 5.5, cur_layer.y + 5.5);
+                context.lineTo(cur_layer.x - 5.5, cur_layer.y + 5.5);
+                context.lineTo(cur_layer.x - 5.5, cur_layer.y - 5.5);
+                context.strokeStyle = "rgba(0,0,0,.5)";
+                context.stroke();
             }
         }
         
@@ -151,6 +160,7 @@
                 cur_layer = layers[i];
                 /// If visible
                 ///TODO: Make a bounding box measurement for rotated elements.
+                ///TODO Determine if it is hovering over a decoration.
                 if (cur_layer.angle === 0) {
                     if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
                         document.title = i;
@@ -161,11 +171,30 @@
             }
             
             /// Is the mouse hovering over a layer?
-            if (active_layer !== i) {
-                active_layer = i
-                redraw();
+            if (hover_layer !== i) {
+                hover_layer = i
+                //redraw();
+                if (hover_layer >= 0) {
+                    canvas_el.style.cursor = "move";
+                } else {
+                    canvas_el.style.cursor = "auto";
+                }
             }
             
+        }
+        
+        canvas_el.onmousedown = function (e)
+        {
+            if (hover_layer >= 0) {
+                /// Store the last layer so that it doesn't have to redraw the entire page.
+                last_layer     = selected_layer;
+                selected_layer = hover_layer;
+                
+                redraw();
+                
+                /// Last layer is no longer needed since it finished redrawing the parts that changed.
+                last_layer = -1;
+            }
         }
         
         return {
