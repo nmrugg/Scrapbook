@@ -14,7 +14,15 @@
             
             hover_layer    = -1,
             last_layer     = -1,
-            selected_layer = -1;
+            selected_layer = -1,
+            
+            cur_action,
+            
+            action_idle   = 0,
+            action_move   = 1,
+            action_scale  = 2,
+            action_rotate = 3,
+            action_crop   = 4;
         
         canvas_el.style.background = "#FFF";
         
@@ -140,62 +148,99 @@
             };
         }
         
-        canvas_el.onmousemove = function (e)
+        
+        (function ()
         {
-            var cur_layer,
-                cur_pos = get_relative_x_y(e),
-                cur_x,
-                cur_y,
-                i,
-                layer_count;
+            var button_down = false,
+                button_state,
             
-            cur_x = cur_pos.x;
-            cur_y = cur_pos.y;
-            ///TODO: Only do this when the mouse is not pressed.
-            /// Is the cursor hovering over something?
-            i = layers.length - 1;
+                starting_x,
+                starting_y;
             
-            /// Go through the layers backward (starting with the top).
-            while (i >= 0) {
-                cur_layer = layers[i];
-                /// If visible
-                ///TODO: Make a bounding box measurement for rotated elements.
-                ///TODO Determine if it is hovering over a decoration.
-                if (cur_layer.angle === 0) {
-                    if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
-                        document.title = i;
-                        break;
+            canvas_el.onmousemove = function (e)
+            {
+                var cur_layer,
+                    cur_pos = get_relative_x_y(e),
+                    cur_x,
+                    cur_y,
+                    i,
+                    layer_count;
+                
+                cur_x = cur_pos.x;
+                cur_y = cur_pos.y;
+                
+                if (button_down) {
+                    if (selected_layer >= 0) {
+                        document.title = starting_x + " " + cur_x + ", " + starting_y + " " + cur_y;
+                    }
+                } else {
+                    /// Is the cursor hovering over something?
+                    i = layers.length - 1;
+                    
+                    
+                    ///TODO First determine if it is hovering over a decoration.
+                    
+                    /// Go through the layers backward (starting with the top).
+                    while (i >= 0) {
+                        cur_layer = layers[i];
+                        /// If visible
+                        ///TODO: Make a bounding box measurement for rotated elements.
+                        if (cur_layer.angle === 0) {
+                            if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
+                                document.title = i;
+                                break;
+                            }
+                        }
+                        --i;
+                    }
+                    
+                    /// Is the mouse hovering over a layer?
+                    if (hover_layer !== i) {
+                        hover_layer = i
+                        //redraw();
+                        if (hover_layer >= 0) {
+                            canvas_el.style.cursor = "move";
+                        } else {
+                            canvas_el.style.cursor = "auto";
+                        }
                     }
                 }
-                --i;
             }
             
-            /// Is the mouse hovering over a layer?
-            if (hover_layer !== i) {
-                hover_layer = i
-                //redraw();
-                if (hover_layer >= 0) {
-                    canvas_el.style.cursor = "move";
-                } else {
-                    canvas_el.style.cursor = "auto";
-                }
-            }
-            
-        }
-        
-        canvas_el.onmousedown = function (e)
-        {
-            if (hover_layer >= 0) {
+            canvas_el.onmousedown = function (e)
+            {
+                var cur_pos = get_relative_x_y(e);
+                
+                button_state = e.button;
+                button_down  = true;
+                
+                
                 /// Store the last layer so that it doesn't have to redraw the entire page.
                 last_layer     = selected_layer;
                 selected_layer = hover_layer;
                 
-                redraw();
+                if (last_layer != selected_layer) {
+                    redraw();
+                    
+                    /// Last layer is no longer needed since it finished redrawing the parts that changed.
+                    last_layer = -1;
+                }
                 
-                /// Last layer is no longer needed since it finished redrawing the parts that changed.
-                last_layer = -1;
+                if (selected_layer >= 0) {
+                    ///TODO: This needs to be determined.
+                    cur_action = action_move;
+                    
+                    starting_x = cur_pos.x;
+                    starting_y = cur_pos.y;
+                }
             }
-        }
+            
+            canvas_el.onmouseup = function (e)
+            {
+                button_state = e.button;
+                button_down  = false;
+            }
+        }());
         
         return {
             add_image:        add_image,
