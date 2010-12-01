@@ -153,9 +153,11 @@
         {
             var button_down = false,
                 button_state,
-            
-                starting_x,
-                starting_y;
+                
+                layer_starting_x,
+                layer_starting_y,
+                mouse_starting_x,
+                mouse_starting_y;
             
             canvas_el.onmousemove = function (e)
             {
@@ -171,7 +173,12 @@
                 
                 if (button_down) {
                     if (selected_layer >= 0) {
-                        document.title = starting_x + " " + cur_x + ", " + starting_y + " " + cur_y;
+                        //document.title = mouse_starting_x + " " + cur_x + ", " + mouse_starting_y + " " + cur_y;
+                        cur_layer = layers[selected_layer];
+                        cur_layer.x = layer_starting_x + (cur_x - mouse_starting_x);
+                        cur_layer.y = layer_starting_y + (cur_y - mouse_starting_y);
+                        document.title = cur_layer.y;
+                        redraw();
                     }
                 } else {
                     /// Is the cursor hovering over something?
@@ -230,8 +237,11 @@
                     ///TODO: This needs to be determined.
                     cur_action = action_move;
                     
-                    starting_x = cur_pos.x;
-                    starting_y = cur_pos.y;
+                    mouse_starting_x = cur_pos.x;
+                    mouse_starting_y = cur_pos.y;
+                    
+                    layer_starting_x = layers[selected_layer].x;
+                    layer_starting_y = layers[selected_layer].y;
                 }
             }
             
