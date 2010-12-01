@@ -212,7 +212,7 @@
                         }
                     }
                 }
-            }
+            };
             
             canvas_el.onmousedown = function (e)
             {
@@ -243,13 +243,25 @@
                     layer_starting_x = layers[selected_layer].x;
                     layer_starting_y = layers[selected_layer].y;
                 }
-            }
+            };
             
             canvas_el.onmouseup = function (e)
             {
                 button_state = e.button;
                 button_down  = false;
-            }
+            };
+            
+            /// Allow the cursor to leave the canvas and still affect the layer.
+            document.onmousemove = function (e)
+            {
+                canvas_el.onmousemove(e);
+            };
+            
+            /// Allow the cursor to leave the canvas and still affect the layer.
+            document.onmouseup = function (e)
+            {
+                canvas_el.onmouseup(e);
+            };
         }());
         
         return {
