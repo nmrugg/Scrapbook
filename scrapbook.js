@@ -74,7 +74,9 @@
         
         function create_new_layer(type, img, x, y, text)
         {
-            var obj,
+            var fit_into_height,
+                fit_into_width,
+                obj,
                 shrink_by;
             
             obj = {
@@ -88,15 +90,18 @@
             
             if (type == "img") {
                 obj.img    = img;
-                obj.orig_h = img.height;
                 obj.orig_w = img.width;
+                obj.orig_h = img.height;
                 
-                if (obj.orig_h > canvas.height || obj.orig_w > canvas.width) {
+                fit_into_width  = canvas.width  - (canvas.width  * .35);
+                fit_into_height = canvas.height - (canvas.height * .35);
+                
+                if (obj.orig_h > fit_into_height || obj.orig_w > fit_into_width) {
                     /// Is the height the biggest problem?
-                    if (obj.orig_h - canvas.height > obj.orig_w - canvas.width) {
-                        shrink_by = canvas.height / obj.orig_h;
+                    if (obj.orig_h - fit_into_height > obj.orig_w - fit_into_width) {
+                        shrink_by = fit_into_height / obj.orig_h;
                     } else {
-                        shrink_by = canvas.width / obj.orig_w;
+                        shrink_by = fit_into_width  / obj.orig_w;
                     }
                     obj.height = Math.floor(obj.orig_h * shrink_by);
                     obj.width  = Math.floor(obj.orig_w * shrink_by);
