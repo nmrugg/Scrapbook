@@ -17,18 +17,78 @@
             selected_layer = -1,
             
             cur_action,
+            cur_decoration_mode,
+            
             
             action_idle   = 0,
             action_move   = 1,
             action_scale  = 2,
             action_rotate = 3,
-            action_crop   = 4;
+            action_crop   = 4,
+            
+            decoration_resize = 1,
+            decoration_rotate = 2,
+            decoration_crop   = 3;
+        
+        cur_decoration_mode = decoration_resize;
         
         canvas_el.style.background = "#FFF";
         
         /// Width and height must be set with setAttribute() to avoid stretching.
         canvas_el.setAttribute("width",  canvas.width);
         canvas_el.setAttribute("height", canvas.height);
+        
+        
+        function draw_decoration(cur_layer)
+        {
+            var cur_x = cur_layer.x,
+                cur_y = cur_layer.y,
+                cur_x2,
+                cur_y2;
+            
+            cur_x2 = cur_x + cur_layer.width;
+            cur_y2 = cur_y + cur_layer.height;
+            
+            switch (cur_decoration_mode) {
+            case decoration_resize:
+                /// Upper left square
+                context.moveTo(cur_x - 4.5, cur_y - 4.5);
+                context.lineTo(cur_x + 6.5, cur_y - 4.5);
+                context.lineTo(cur_x + 6.5, cur_y + 6.5);
+                context.lineTo(cur_x - 4.5, cur_y + 6.5);
+                context.lineTo(cur_x - 4.5, cur_y - 4.5);
+
+                
+                /// Upper right square
+                context.moveTo(cur_x2 - 6.5, cur_y - 4.5);
+                context.lineTo(cur_x2 + 4.5, cur_y - 4.5);
+                context.lineTo(cur_x2 + 4.5, cur_y + 6.5);
+                context.lineTo(cur_x2 - 6.5, cur_y + 6.5);
+                context.lineTo(cur_x2 - 6.5, cur_y - 4.5);
+                
+                /// lower left square
+                context.moveTo(cur_x - 4.5, cur_y2 - 6.5);
+                context.lineTo(cur_x + 6.5, cur_y2 - 6.5);
+                context.lineTo(cur_x + 6.5, cur_y2 + 4.5);
+                context.lineTo(cur_x - 4.5, cur_y2 + 4.5);
+                context.lineTo(cur_x - 4.5, cur_y2 - 6.5);
+                
+                /// lower right square
+                context.moveTo(cur_x2 - 6.5, cur_y2 - 6.5);
+                context.lineTo(cur_x2 + 4.5, cur_y2 - 6.5);
+                context.lineTo(cur_x2 + 4.5, cur_y2 + 4.5);
+                context.lineTo(cur_x2 - 6.5, cur_y2 + 4.5);
+                context.lineTo(cur_x2 - 6.5, cur_y2 - 6.5);
+                context.strokeStyle = "rgba(0,0,0,.5)";
+                context.stroke();
+                
+                break;
+            case decoration_rotate:
+                break;
+            case decoration_crop:
+                break;
+            }
+        }
         
         function redraw()
         {
@@ -51,8 +111,15 @@
                 context.globalAlpha              = cur_layer.opacity;
                 context.globalCompositeOperation = cur_layer.composite;
                 
-                /// If an image
-                context.drawImage(cur_layer.img, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
+                if (cur_layer.angle != 0) {
+                    context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
+                    context.rotate(45 * Math.PI / 180);
+                    /// If an image
+                    context.drawImage(cur_layer.img, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width, cur_layer.height);
+                } else {
+                    /// If an image
+                    context.drawImage(cur_layer.img, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
+                }
                 
                 context.restore();
                 ++i;
@@ -60,15 +127,7 @@
             
             /// Is this the active layer?
             if (selected_layer >= 0) {
-                cur_layer = layers[selected_layer];
-                /// Determine the type of decorations to draw.
-                context.moveTo(cur_layer.x - 5.5, cur_layer.y - 5.5);
-                context.lineTo(cur_layer.x + 5.5, cur_layer.y - 5.5);
-                context.lineTo(cur_layer.x + 5.5, cur_layer.y + 5.5);
-                context.lineTo(cur_layer.x - 5.5, cur_layer.y + 5.5);
-                context.lineTo(cur_layer.x - 5.5, cur_layer.y - 5.5);
-                context.strokeStyle = "rgba(0,0,0,.5)";
-                context.stroke();
+                draw_decoration(layers[selected_layer]);
             }
         }
         
@@ -121,6 +180,10 @@
             var img = new Image();
             img.onload = function ()
             {
+                /// It might be nice place the image relative to the center, but if the image is shurnk, it will not be correct.
+                //x -= img.width  / 2;
+                //y -= img.height / 2;
+                
                 /// Prevent an image from being created off of the page (this could happen when dropping multiple images).
                 if (x > canvas.width - 5) {
                     x = canvas.width - 5;
@@ -128,7 +191,9 @@
                 if (y > canvas.height - 5) {
                     y = canvas.height - 5;
                 }
+                
                 layers[layers.length] = create_new_layer("img", img, x, y);
+                
                 redraw();
             };
             img.src = dataURI;
@@ -164,51 +229,65 @@
                 mouse_starting_x,
                 mouse_starting_y;
             
-            canvas_el.onmousemove = function (e)
+            function get_layer_from_pos(cur_pos)
             {
                 var cur_layer,
-                    cur_pos = get_relative_x_y(e),
-                    cur_x,
-                    cur_y,
+                    cur_x = cur_pos.x,
+                    cur_y = cur_pos.y,
                     i,
                     layer_count;
+            
+                /// Is the cursor hovering over something?
+                i = layers.length - 1;
+                
+                
+                ///TODO First determine if it is hovering over a decoration.
+                
+                /// Go through the layers backward (starting with the top).
+                while (i >= 0) {
+                    cur_layer = layers[i];
+                    /// If visible
+                    ///TODO: Make a bounding box measurement for rotated elements.
+                    if (cur_layer.angle === 0) {
+                        if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
+                            document.title = i;
+                            break;
+                        }
+                    }
+                    --i;
+                }
+                
+                return i;
+            }
+            
+            canvas_el.onmousemove = function (e)
+            {
+                var cur_pos = get_relative_x_y(e),
+                    cur_x,
+                    cur_y,
+                    tmp_layer;
                 
                 cur_x = cur_pos.x;
                 cur_y = cur_pos.y;
                 
                 if (button_down) {
                     if (selected_layer >= 0) {
+                        /// If moving
                         //document.title = mouse_starting_x + " " + cur_x + ", " + mouse_starting_y + " " + cur_y;
-                        cur_layer = layers[selected_layer];
-                        cur_layer.x = layer_starting_x + (cur_x - mouse_starting_x);
-                        cur_layer.y = layer_starting_y + (cur_y - mouse_starting_y);
-                        document.title = cur_layer.y;
-                        redraw();
+                        if (cur_action === action_move) {
+                            cur_layer = layers[selected_layer];
+                            cur_layer.x = layer_starting_x + (cur_x - mouse_starting_x);
+                            cur_layer.y = layer_starting_y + (cur_y - mouse_starting_y);
+                            /// Figure out a way to tell the canvas to only redraw the part that changed.
+                            redraw();
+                        }
                     }
                 } else {
-                    /// Is the cursor hovering over something?
-                    i = layers.length - 1;
-                    
-                    
-                    ///TODO First determine if it is hovering over a decoration.
-                    
-                    /// Go through the layers backward (starting with the top).
-                    while (i >= 0) {
-                        cur_layer = layers[i];
-                        /// If visible
-                        ///TODO: Make a bounding box measurement for rotated elements.
-                        if (cur_layer.angle === 0) {
-                            if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
-                                document.title = i;
-                                break;
-                            }
-                        }
-                        --i;
-                    }
+                    tmp_layer = get_layer_from_pos(cur_pos);
                     
                     /// Is the mouse hovering over a layer?
-                    if (hover_layer !== i) {
-                        hover_layer = i
+                    if (hover_layer !== tmp_layer) {
+                        hover_layer = tmp_layer
                         //redraw();
                         if (hover_layer >= 0) {
                             canvas_el.style.cursor = "move";
@@ -226,10 +305,9 @@
                 button_state = e.button;
                 button_down  = true;
                 
-                
                 /// Store the last layer so that it doesn't have to redraw the entire page.
                 last_layer     = selected_layer;
-                selected_layer = hover_layer;
+                selected_layer = get_layer_from_pos(get_relative_x_y(e));
                 
                 if (last_layer != selected_layer) {
                     redraw();
@@ -241,6 +319,8 @@
                 if (selected_layer >= 0) {
                     ///TODO: This needs to be determined.
                     cur_action = action_move;
+                    
+                    canvas_el.style.cursor = "move";
                     
                     mouse_starting_x = cur_pos.x;
                     mouse_starting_y = cur_pos.y;
