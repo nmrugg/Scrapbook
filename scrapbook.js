@@ -113,7 +113,7 @@
                 
                 if (cur_layer.angle != 0) {
                     context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
-                    context.rotate(45 * Math.PI / 180);
+                    context.rotate(cur_layer.angle * Math.PI / 180);
                     /// If an image
                     context.drawImage(cur_layer.img, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width, cur_layer.height);
                 } else {
@@ -142,6 +142,15 @@
                 angle:     0,
                 composite: "source-over",
                 opacity:   1,
+                /// Points after rotated.
+                rot_x1:    0,
+                rot_x2:    0,
+                rot_x3:    0,
+                rot_x4:    0,
+                rot_y1:    0,
+                rot_y2:    0,
+                rot_y3:    0,
+                rot_y4:    0,
                 type:      type,
                 x:         x,
                 y:         y
@@ -174,7 +183,46 @@
             
             return obj;
         }
-    
+        
+        function rotate(cur_layer, angle)
+        {
+            var center_x,
+                center_y,
+                x1,
+                y1,
+                x2,
+                y2;
+            
+            cur_layer.angle = angle;
+            
+            angle *= Math.PI / 180;
+            
+            if (angle !== 0) {
+                center_x = cur_layer.x + (cur_layer.width  / 2);
+                center_y = cur_layer.y + (cur_layer.height / 2);
+                
+                /// Get points relative to the center of the rectangle.
+                x1 = cur_layer.x - center_x;
+                y1 = cur_layer.y - center_y;
+                x2 = (cur_layer.x + cur_layer.width)  - center_x;
+                y2 = (cur_layer.y + cur_layer.height) - center_y;
+                
+                cur_layer.rot_x1 = Math.round(((Math.cos(angle) * x1 - Math.sin(angle) * y1) + center_x) * 100) / 100;
+                cur_layer.rot_y1 = Math.round(((Math.sin(angle) * x1 + Math.cos(angle) * y1) + center_y) * 100) / 100;
+                
+                cur_layer.rot_x2 = Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y1) + center_x) * 100) / 100;
+                cur_layer.rot_y2 = Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y1) + center_y) * 100) / 100;
+                
+                cur_layer.rot_x3 = Math.round(((Math.cos(angle) * x1 - Math.sin(angle) * y2) + center_x) * 100) / 100;
+                cur_layer.rot_y3 = Math.round(((Math.sin(angle) * x1 + Math.cos(angle) * y2) + center_y) * 100) / 100;
+                
+                cur_layer.rot_x4 = Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y2) + center_x) * 100) / 100;
+                cur_layer.rot_y4 = Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y2) + center_y) * 100) / 100;
+
+                document.title = "(" + cur_layer.rot_x1 + ", " + cur_layer.rot_y1 + ") " + "(" + cur_layer.rot_x2 + ", " + cur_layer.rot_y2 + ") " + "(" + cur_layer.rot_x3 + ", " + cur_layer.rot_y3 + ") " + "(" + cur_layer.rot_x4 + ", " + cur_layer.rot_y4 + ")";
+            }
+        }
+        
         function add_image(dataURI, x, y)
         {
             var img = new Image();
@@ -193,6 +241,8 @@
                 }
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
+                
+                rotate(layers[layers.length - 1], 33);
                 
                 redraw();
             };
@@ -250,7 +300,6 @@
                     ///TODO: Make a bounding box measurement for rotated elements.
                     if (cur_layer.angle === 0) {
                         if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
-                            document.title = i;
                             break;
                         }
                     }
