@@ -41,44 +41,71 @@
         
         function draw_decoration(cur_layer)
         {
-            var cur_x = cur_layer.x,
-                cur_y = cur_layer.y,
-                cur_x2,
-                cur_y2;
+            var x1,
+                x2,
+                x3,
+                x4,
+                y1,
+                y2,
+                y3,
+                y4;
             
-            cur_x2 = cur_x + cur_layer.width;
-            cur_y2 = cur_y + cur_layer.height;
+            if (cur_layer.angle === 0) {
+                x1 = cur_layer.x;
+                y1 = cur_layer.y;
+                
+                x2 = x1 + cur_layer.width;
+                y2 = y1 + cur_layer.height;
+                
+                x3 = x1;
+                y3 = y2;
+                
+                x4 = x2;
+                y4 = y1;
+            } else {
+                x1 = cur_layer.rot_x1;
+                x2 = cur_layer.rot_x2;
+                x3 = cur_layer.rot_x3;
+                x4 = cur_layer.rot_x4;
+                
+                y1 = cur_layer.rot_y1;
+                y2 = cur_layer.rot_y2;
+                y3 = cur_layer.rot_y3;
+                y4 = cur_layer.rot_y4;
+            }
+            
+            context.save();
             
             switch (cur_decoration_mode) {
             case decoration_resize:
                 /// Upper left square
-                context.moveTo(cur_x - 4.5, cur_y - 4.5);
-                context.lineTo(cur_x + 6.5, cur_y - 4.5);
-                context.lineTo(cur_x + 6.5, cur_y + 6.5);
-                context.lineTo(cur_x - 4.5, cur_y + 6.5);
-                context.lineTo(cur_x - 4.5, cur_y - 4.5);
+                context.moveTo(x1 - 4.5, y1 - 4.5);
+                context.lineTo(x1 + 6.5, y1 - 4.5);
+                context.lineTo(x1 + 6.5, y1 + 6.5);
+                context.lineTo(x1 - 4.5, y1 + 6.5);
+                context.lineTo(x1 - 4.5, y1 - 4.5);
 
                 
                 /// Upper right square
-                context.moveTo(cur_x2 - 6.5, cur_y - 4.5);
-                context.lineTo(cur_x2 + 4.5, cur_y - 4.5);
-                context.lineTo(cur_x2 + 4.5, cur_y + 6.5);
-                context.lineTo(cur_x2 - 6.5, cur_y + 6.5);
-                context.lineTo(cur_x2 - 6.5, cur_y - 4.5);
+                context.moveTo(x2 - 6.5, y2 - 4.5);
+                context.lineTo(x2 + 4.5, y2 - 4.5);
+                context.lineTo(x2 + 4.5, y2 + 6.5);
+                context.lineTo(x2 - 6.5, y2 + 6.5);
+                context.lineTo(x2 - 6.5, y2 - 4.5);
                 
                 /// lower left square
-                context.moveTo(cur_x - 4.5, cur_y2 - 6.5);
-                context.lineTo(cur_x + 6.5, cur_y2 - 6.5);
-                context.lineTo(cur_x + 6.5, cur_y2 + 4.5);
-                context.lineTo(cur_x - 4.5, cur_y2 + 4.5);
-                context.lineTo(cur_x - 4.5, cur_y2 - 6.5);
+                context.moveTo(x3 - 4.5, y3 - 6.5);
+                context.lineTo(x3 + 6.5, y3 - 6.5);
+                context.lineTo(x3 + 6.5, y3 + 4.5);
+                context.lineTo(x3 - 4.5, y3 + 4.5);
+                context.lineTo(x3 - 4.5, y3 - 6.5);
                 
                 /// lower right square
-                context.moveTo(cur_x2 - 6.5, cur_y2 - 6.5);
-                context.lineTo(cur_x2 + 4.5, cur_y2 - 6.5);
-                context.lineTo(cur_x2 + 4.5, cur_y2 + 4.5);
-                context.lineTo(cur_x2 - 6.5, cur_y2 + 4.5);
-                context.lineTo(cur_x2 - 6.5, cur_y2 - 6.5);
+                context.moveTo(x4 - 6.5, y4 - 6.5);
+                context.lineTo(x4 + 4.5, y4 - 6.5);
+                context.lineTo(x4 + 4.5, y4 + 4.5);
+                context.lineTo(x4 - 6.5, y4 + 4.5);
+                context.lineTo(x4 - 6.5, y4 - 6.5);
                 context.strokeStyle = "rgba(0,0,0,.5)";
                 context.stroke();
                 
@@ -88,6 +115,8 @@
             case decoration_crop:
                 break;
             }
+            
+            context.restore();
         }
         
         function redraw()
@@ -218,8 +247,6 @@
                 
                 cur_layer.rot_x4 = Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y2) + center_x) * 100) / 100;
                 cur_layer.rot_y4 = Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y2) + center_y) * 100) / 100;
-
-                document.title = "(" + cur_layer.rot_x1 + ", " + cur_layer.rot_y1 + ") " + "(" + cur_layer.rot_x2 + ", " + cur_layer.rot_y2 + ") " + "(" + cur_layer.rot_x3 + ", " + cur_layer.rot_y3 + ") " + "(" + cur_layer.rot_x4 + ", " + cur_layer.rot_y4 + ")";
             }
         }
         
@@ -298,7 +325,7 @@
                     cur_layer = layers[i];
                     /// If visible
                     ///TODO: Make a bounding box measurement for rotated elements.
-                    if (cur_layer.angle === 0) {
+                    if (cur_layer.angle === 0 || true) {
                         if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
                             break;
                         }
