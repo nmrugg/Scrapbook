@@ -128,7 +128,8 @@
                 context.globalAlpha              = cur_layer.opacity;
                 context.globalCompositeOperation = cur_layer.composite;
                 
-                if (cur_layer.angle != 0) {
+                /// If rotated
+                if (cur_layer.angle !== 0) {
                     context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
                     context.rotate(cur_layer.angle);
                     /// If an image
@@ -257,7 +258,7 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                rotate(layers[layers.length - 1], -100);
+                //rotate(layers[layers.length - 1], 33);
                 
                 redraw();
             };
@@ -308,7 +309,7 @@
                         x2,
                         y1,
                         y2;
-                    //document.title = x0 + " " + y0 + " (" + shape[0].x + ", " + shape[0].y + ") " + " (" + shape[1].x + ", " + shape[1].y + ") " + " (" + shape[2].x + ", " + shape[2].y + ") " + " (" + shape[3].x + ", " + shape[3].y + ")";
+                    
                     while (point < points_length) {
                         x1 = shape[point].x;
                         y1 = shape[point].y;
@@ -325,7 +326,7 @@
                         ///NOTE: If the area of a triangle is taken in counter-clockwise order, the area will be positive (negitive otherwise)
                         ///      If the area is always the same sign (either always positive or always negative) that means the point is inside the shape.
                         sign = (x1 * y2 - y1 * x2 - x0 * y2 + y0 * x2 + x0 * y1 - y0 * x1) > 0;
-                        document.title += sign + " ";
+                        
                         /// Since this is the first time, just store whether or not the area is positive.
                         if (point === 0) {
                             positive = sign;
@@ -350,18 +351,38 @@
                         cur_y = cur_pos.y,
                         i,
                         layer_count;
-                
-                    /// Is the cursor hovering over something?
-                    i = layers.length - 1;
                     
+                    
+                    /// First, check to see if the cursor is hovering over a decoration.
+                    if (selected_layer >= 0) {
+                        cur_layer = layers[selected_layer];
+                        /// If not rotated
+                        if (cur_layer.angle === 0) {
+                            ///NOTE: Move and Crop decorations are both squares.
+                            if (cur_decoration_mode != decoration_rotate) {
+                                /// Upper left corner
+                                if (cur_layer.x - 5 <= cur_x && cur_layer.x + 5 >= cur_x && cur_layer.y - 5 <= cur_y && cur_layer.y + 5 >= cur_y) {
+                                    /// Is there a better way to return this info?
+                                    document.title = "ul";
+                                    return "ul";
+                                }
+                            /// If the decoration is a rotation circle
+                            } else {
+                            
+                            }
+                        }
+                    }
+                    document.title = "";
+                    /// Start with the top layer.
+                    i = layers.length - 1;
                     
                     ///TODO First determine if it is hovering over a decoration.
                     
                     /// Go through the layers backward (starting with the top).
                     while (i >= 0) {
                         cur_layer = layers[i];
-                        /// If visible
-                        ///TODO: Make a bounding box measurement for rotated elements.
+                        ///TODO: If visible
+                        /// If not rotated
                         if (cur_layer.angle === 0) {
                             if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
                                 break;
@@ -370,19 +391,19 @@
                             if (is_inside_shape(cur_x, cur_y, [
                                 {
                                     x: cur_layer.rot_x1,
-                                    y: cur_layer.rot_y1,
+                                    y: cur_layer.rot_y1
                                 },
                                 {
                                     x: cur_layer.rot_x2,
-                                    y: cur_layer.rot_y2,
+                                    y: cur_layer.rot_y2
                                 },
                                 {
                                     x: cur_layer.rot_x3,
-                                    y: cur_layer.rot_y3,
+                                    y: cur_layer.rot_y3
                                 },
                                 {
                                     x: cur_layer.rot_x4,
-                                    y: cur_layer.rot_y4,
+                                    y: cur_layer.rot_y4
                                 }
                             ])) {
                                 break;
@@ -410,7 +431,6 @@
                 if (button_down) {
                     if (selected_layer >= 0) {
                         /// If moving
-                        //document.title = mouse_starting_x + " " + cur_x + ", " + mouse_starting_y + " " + cur_y;
                         if (cur_action === action_move) {
                             cur_layer = layers[selected_layer];
                             
