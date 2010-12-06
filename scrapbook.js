@@ -41,13 +41,10 @@
         
         function draw_decoration(cur_layer)
         {
-            var cur_x = cur_layer.x,
-                cur_y = cur_layer.y,
+            var cur_x,
+                cur_y,
                 cur_x2,
                 cur_y2;
-            
-            cur_x2 = cur_x + cur_layer.width;
-            cur_y2 = cur_y + cur_layer.height;
             
             context.save();
             
@@ -56,8 +53,15 @@
                 cur_y = 0;
                 cur_x2 = cur_layer.width;
                 cur_y2 = cur_layer.height;
+                //context.translate(cur_layer.rot_x1, cur_layer.rot_y1);
                 context.translate(cur_layer.rot_x1, cur_layer.rot_y1);
-                context.rotate(cur_layer.angle * Math.PI / 180);
+                context.rotate(cur_layer.angle);
+            } else {
+                cur_x = cur_layer.x;
+                cur_y = cur_layer.y;
+                
+                cur_x2 = cur_x + cur_layer.width;
+                cur_y2 = cur_y + cur_layer.height;
             }
             
             switch (cur_decoration_mode) {
@@ -126,7 +130,7 @@
                 
                 if (cur_layer.angle != 0) {
                     context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
-                    context.rotate(cur_layer.angle * Math.PI / 180);
+                    context.rotate(cur_layer.angle);
                     /// If an image
                     context.drawImage(cur_layer.img, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width, cur_layer.height);
                 } else {
@@ -206,9 +210,9 @@
                 x2,
                 y2;
             
-            cur_layer.angle = angle;
-            
             angle *= Math.PI / 180;
+            
+            cur_layer.angle = angle;
             
             if (angle !== 0) {
                 center_x = cur_layer.x + (cur_layer.width  / 2);
@@ -226,11 +230,11 @@
                 cur_layer.rot_x2 = Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y1) + center_x) * 100) / 100;
                 cur_layer.rot_y2 = Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y1) + center_y) * 100) / 100;
                 
-                cur_layer.rot_x3 = Math.round(((Math.cos(angle) * x1 - Math.sin(angle) * y2) + center_x) * 100) / 100;
-                cur_layer.rot_y3 = Math.round(((Math.sin(angle) * x1 + Math.cos(angle) * y2) + center_y) * 100) / 100;
+                cur_layer.rot_x3 = Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y2) + center_x) * 100) / 100;
+                cur_layer.rot_y3 = Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y2) + center_y) * 100) / 100;
                 
-                cur_layer.rot_x4 = Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y2) + center_x) * 100) / 100;
-                cur_layer.rot_y4 = Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y2) + center_y) * 100) / 100;
+                cur_layer.rot_x4 = Math.round(((Math.cos(angle) * x1 - Math.sin(angle) * y2) + center_x) * 100) / 100;
+                cur_layer.rot_y4 = Math.round(((Math.sin(angle) * x1 + Math.cos(angle) * y2) + center_y) * 100) / 100;
             }
         }
         
@@ -253,7 +257,7 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                rotate(layers[layers.length - 1], 33);
+                rotate(layers[layers.length - 1], -100);
                 
                 redraw();
             };
@@ -288,44 +292,117 @@
                 layer_starting_x,
                 layer_starting_y,
                 mouse_starting_x,
-                mouse_starting_y;
+                mouse_starting_y,
+                
+                get_layer_from_pos;
             
-            function get_layer_from_pos(cur_pos)
+            get_layer_from_pos = (function ()
             {
-                var cur_layer,
-                    cur_x = cur_pos.x,
-                    cur_y = cur_pos.y,
-                    i,
-                    layer_count;
-            
-                /// Is the cursor hovering over something?
-                i = layers.length - 1;
-                
-                
-                ///TODO First determine if it is hovering over a decoration.
-                
-                /// Go through the layers backward (starting with the top).
-                while (i >= 0) {
-                    cur_layer = layers[i];
-                    /// If visible
-                    ///TODO: Make a bounding box measurement for rotated elements.
-                    if (cur_layer.angle === 0 || true) {
-                        if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
-                            break;
+                function is_inside_shape(x0, y0, shape)
+                {
+                    var point = 0,
+                        points_length = shape.length,
+                        positive,
+                        sign,
+                        x1,
+                        x2,
+                        y1,
+                        y2;
+                    //document.title = x0 + " " + y0 + " (" + shape[0].x + ", " + shape[0].y + ") " + " (" + shape[1].x + ", " + shape[1].y + ") " + " (" + shape[2].x + ", " + shape[2].y + ") " + " (" + shape[3].x + ", " + shape[3].y + ")";
+                    while (point < points_length) {
+                        x1 = shape[point].x;
+                        y1 = shape[point].y;
+                        
+                        /// If this is the last point, use the first point.
+                        if (point + 1 === points_length) {
+                            x2 = shape[0].x;
+                            y2 = shape[0].y;
+                        } else {
+                            x2 = shape[point + 1].x;
+                            y2 = shape[point + 1].y;
                         }
+                        
+                        ///NOTE: If the area of a triangle is taken in counter-clockwise order, the area will be positive (negitive otherwise)
+                        ///      If the area is always the same sign (either always positive or always negative) that means the point is inside the shape.
+                        sign = (x1 * y2 - y1 * x2 - x0 * y2 + y0 * x2 + x0 * y1 - y0 * x1) > 0;
+                        document.title += sign + " ";
+                        /// Since this is the first time, just store whether or not the area is positive.
+                        if (point === 0) {
+                            positive = sign;
+                        } else {
+                            /// If the area is ever a different sign then the point is not in the shape.
+                            if (positive !== sign) {
+                                return false;
+                            }
+                        }
+                        
+                        ++point;
                     }
-                    --i;
+                    
+                    /// The area was always the same sign so the point is inside the shape.
+                    return true;
                 }
                 
-                return i;
-            }
+                return function (cur_pos)
+                {
+                    var cur_layer,
+                        cur_x = cur_pos.x,
+                        cur_y = cur_pos.y,
+                        i,
+                        layer_count;
+                
+                    /// Is the cursor hovering over something?
+                    i = layers.length - 1;
+                    
+                    
+                    ///TODO First determine if it is hovering over a decoration.
+                    
+                    /// Go through the layers backward (starting with the top).
+                    while (i >= 0) {
+                        cur_layer = layers[i];
+                        /// If visible
+                        ///TODO: Make a bounding box measurement for rotated elements.
+                        if (cur_layer.angle === 0) {
+                            if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
+                                break;
+                            }
+                        } else {
+                            if (is_inside_shape(cur_x, cur_y, [
+                                {
+                                    x: cur_layer.rot_x1,
+                                    y: cur_layer.rot_y1,
+                                },
+                                {
+                                    x: cur_layer.rot_x2,
+                                    y: cur_layer.rot_y2,
+                                },
+                                {
+                                    x: cur_layer.rot_x3,
+                                    y: cur_layer.rot_y3,
+                                },
+                                {
+                                    x: cur_layer.rot_x4,
+                                    y: cur_layer.rot_y4,
+                                }
+                            ])) {
+                                break;
+                            }
+                        }
+                        --i;
+                    }
+                    
+                    return i;
+                };
+            }());
             
             canvas_el.onmousemove = function (e)
             {
                 var cur_pos = get_relative_x_y(e),
                     cur_x,
                     cur_y,
-                    tmp_layer;
+                    tmp_layer,
+                    x_move_amt,
+                    y_move_amt;
                 
                 cur_x = cur_pos.x;
                 cur_y = cur_pos.y;
@@ -336,9 +413,24 @@
                         //document.title = mouse_starting_x + " " + cur_x + ", " + mouse_starting_y + " " + cur_y;
                         if (cur_action === action_move) {
                             cur_layer = layers[selected_layer];
+                            
+                            x_move_amt = cur_layer.x;
+                            y_move_amt = cur_layer.y;
+                            
                             cur_layer.x = layer_starting_x + (cur_x - mouse_starting_x);
                             cur_layer.y = layer_starting_y + (cur_y - mouse_starting_y);
                             
+                            x_move_amt -= cur_layer.x;
+                            y_move_amt -= cur_layer.y;
+                            
+                            cur_layer.rot_x1 -= x_move_amt;
+                            cur_layer.rot_y1 -= y_move_amt;
+                            cur_layer.rot_x2 -= x_move_amt;
+                            cur_layer.rot_y2 -= y_move_amt;
+                            cur_layer.rot_x3 -= x_move_amt;
+                            cur_layer.rot_y3 -= y_move_amt;
+                            cur_layer.rot_x4 -= x_move_amt;
+                            cur_layer.rot_y4 -= y_move_amt;
                             /// Figure out a way to tell the canvas to only redraw the part that changed.
                             redraw();
                         }
@@ -421,7 +513,7 @@
     {
         if (e.lengthComputable) {
             /// Percent = e.loaded / e.total;
-            document.title = e.loaded / e.total;
+            //document.title = e.loaded / e.total;
         }
     }
     
