@@ -258,7 +258,7 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                //rotate(layers[layers.length - 1], 33);
+                rotate(layers[layers.length - 1], 33);
                 
                 redraw();
             };
@@ -357,6 +357,7 @@
                     if (selected_layer >= 0) {
                         cur_layer = layers[selected_layer];
                         /// If not rotated
+                        ///TODO: Since the algerithm for the rotated object is almsot as fast, rotated and unrotated could be merged together.
                         if (cur_layer.angle === 0) {
                             ///NOTE: Move and Crop decorations are both squares.
                             if (cur_decoration_mode != decoration_rotate) {
@@ -365,10 +366,44 @@
                                     /// Is there a better way to return this info?
                                     document.title = "ul";
                                     return "ul";
+                                } else if (cur_layer.x + cur_layer.width - 5 <= cur_x && cur_layer.x + cur_layer.width + 5 >= cur_x && cur_layer.y - 5 <= cur_y && cur_layer.y + 5 >= cur_y) {
+                                    /// Is there a better way to return this info?
+                                    document.title = "ur";
+                                    return "ur";
+                                } else if (cur_layer.x + cur_layer.width - 5 <= cur_x && cur_layer.x + cur_layer.width + 5 >= cur_x && cur_layer.y + cur_layer.height - 5 <= cur_y && cur_layer.y + cur_layer.height + 5 >= cur_y) {
+                                    /// Is there a better way to return this info?
+                                    document.title = "br";
+                                    return "br";
+                                } else if (cur_layer.x - 5 <= cur_x && cur_layer.x + 5 >= cur_x && cur_layer.y + cur_layer.height - 5 <= cur_y && cur_layer.y + cur_layer.height + 5 >= cur_y) {
+                                    /// Is there a better way to return this info?
+                                    document.title = "bl";
+                                    return "bl";
                                 }
                             /// If the decoration is a rotation circle
                             } else {
                             
+                            }
+                        } else {
+                            if (is_inside_shape(cur_x, cur_y, [
+                                {
+                                    x: cur_layer.rot_x1 - 5,
+                                    y: cur_layer.rot_y1 - 5
+                                },
+                                {
+                                    x: cur_layer.rot_x1 + 5,
+                                    y: cur_layer.rot_y1 - 5
+                                },
+                                {
+                                    x: cur_layer.rot_x1 + 5,
+                                    y: cur_layer.rot_y1 + 5
+                                },
+                                {
+                                    x: cur_layer.rot_x1 - 5,
+                                    y: cur_layer.rot_y1 + 5
+                                }
+                            ])) {
+                                document.title = "ul";
+                                return "ul";
                             }
                         }
                     }
