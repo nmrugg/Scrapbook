@@ -583,9 +583,8 @@
     {
         var count,
             file,
-            files = e.dataTransfer.files,
-            i,
-            offset_count = 0,
+            files        = e.dataTransfer.files,
+            i            = 0,
             reader;
         
         e.stopPropagation();
@@ -599,7 +598,8 @@
             return;
         }
         
-        for (i = 0; i < count; ++i) {
+        function read_file()
+        {
             file   = files[i];
             reader = new FileReader();
             
@@ -611,13 +611,19 @@
             {   
                 var cur_pos = canvas_manager.get_relative_x_y(e);
                 /// offset_count moves the images over slightly when dropping more than one at a time in order to see them all  .
-                canvas_manager.add_image(e2.target.result, cur_pos.x + (offset_count * 15), cur_pos.y + (offset_count * 15));
-                ++offset_count;
+                canvas_manager.add_image(e2.target.result, cur_pos.x + (i * 15), cur_pos.y + (i * 15));
+                ++i;
+                
+                if (i < count) {
+                    read_file();
+                }
             };
             
             /// Begin reading in files.
             reader.readAsDataURL(file);
         }
+        
+        read_file();
     }
 
     
