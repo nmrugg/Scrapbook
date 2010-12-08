@@ -53,8 +53,8 @@
                 cur_y = 0;
                 cur_x2 = cur_layer.width;
                 cur_y2 = cur_layer.height;
-                //context.translate(cur_layer.rot_x1, cur_layer.rot_y1);
-                context.translate(cur_layer.rot_x1, cur_layer.rot_y1);
+                //context.translate(cur_layer.rotated_points.x1, cur_layer.rotated_points.y1);
+                context.translate(cur_layer.rotated_points.x1, cur_layer.rotated_points.y1);
                 context.rotate(cur_layer.angle);
             } else {
                 cur_x = cur_layer.x;
@@ -160,18 +160,13 @@
                 angle:     0,
                 composite: "source-over",
                 opacity:   1,
-                /// Points after rotated.
-                rot_x1:    0,
-                rot_x2:    0,
-                rot_x3:    0,
-                rot_x4:    0,
-                rot_y1:    0,
-                rot_y2:    0,
-                rot_y3:    0,
-                rot_y4:    0,
-                type:      type,
-                x:         x,
-                y:         y
+                
+                rotated_points: {},
+                
+                type: type,
+                
+                x: x,
+                y:  y
             }
             
             if (type == "img") {
@@ -202,40 +197,58 @@
             return obj;
         }
         
-        function rotate(cur_layer, angle)
+        
+        /**
+         * Rotate points of a rectangle around its center.
+         *
+         * @param angle The Angle in radians to rotate.
+         * @param x     The upper left corner x coordinate.
+         * @param y     The upper left corner y coordinate.
+         * @param w     The width of the rectangle.
+         * @param h     The height of the rectangle.
+         */
+        function rotate_rect(angle, x, y, w, h)
         {
             var center_x,
                 center_y,
                 x1,
-                y1,
                 x2,
+                y1,
                 y2;
             
+            center_x = x + (w / 2);
+            center_y = y + (h / 2);
+            
+            /// Get points relative to the center of the rectangle.
+            x1 = x - center_x;
+            y1 = y - center_y;
+            x2 = (x + w) - center_x;
+            y2 = (y + h) - center_y;
+            
+            return {
+                x1: Math.round(((Math.cos(angle) * x1 - Math.sin(angle) * y1) + center_x) * 100) / 100,
+                y1: Math.round(((Math.sin(angle) * x1 + Math.cos(angle) * y1) + center_y) * 100) / 100,
+                
+                x2: Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y1) + center_x) * 100) / 100,
+                y2: Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y1) + center_y) * 100) / 100,
+                
+                x3: Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y2) + center_x) * 100) / 100,
+                y3: Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y2) + center_y) * 100) / 100,
+            
+                x4: Math.round(((Math.cos(angle) * x1 - Math.sin(angle) * y2) + center_x) * 100) / 100,
+                y4: Math.round(((Math.sin(angle) * x1 + Math.cos(angle) * y2) + center_y) * 100) / 100
+            }
+        }
+        
+        
+        function rotate(cur_layer, angle)
+        {            
             angle *= Math.PI / 180;
             
             cur_layer.angle = angle;
             
             if (angle !== 0) {
-                center_x = cur_layer.x + (cur_layer.width  / 2);
-                center_y = cur_layer.y + (cur_layer.height / 2);
-                
-                /// Get points relative to the center of the rectangle.
-                x1 = cur_layer.x - center_x;
-                y1 = cur_layer.y - center_y;
-                x2 = (cur_layer.x + cur_layer.width)  - center_x;
-                y2 = (cur_layer.y + cur_layer.height) - center_y;
-                
-                cur_layer.rot_x1 = Math.round(((Math.cos(angle) * x1 - Math.sin(angle) * y1) + center_x) * 100) / 100;
-                cur_layer.rot_y1 = Math.round(((Math.sin(angle) * x1 + Math.cos(angle) * y1) + center_y) * 100) / 100;
-                
-                cur_layer.rot_x2 = Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y1) + center_x) * 100) / 100;
-                cur_layer.rot_y2 = Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y1) + center_y) * 100) / 100;
-                
-                cur_layer.rot_x3 = Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y2) + center_x) * 100) / 100;
-                cur_layer.rot_y3 = Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y2) + center_y) * 100) / 100;
-                
-                cur_layer.rot_x4 = Math.round(((Math.cos(angle) * x1 - Math.sin(angle) * y2) + center_x) * 100) / 100;
-                cur_layer.rot_y4 = Math.round(((Math.sin(angle) * x1 + Math.cos(angle) * y2) + center_y) * 100) / 100;
+                cur_layer.rotated_points = rotate_rect(angle, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
             }
         }
         
@@ -386,20 +399,20 @@
                         } else {
                             if (is_inside_shape(cur_x, cur_y, [
                                 {
-                                    x: cur_layer.rot_x1 - 5,
-                                    y: cur_layer.rot_y1 - 5
+                                    x: cur_layer.rotated_points.x1 - 5,
+                                    y: cur_layer.rotated_points.y1 - 5
                                 },
                                 {
-                                    x: cur_layer.rot_x1 + 5,
-                                    y: cur_layer.rot_y1 - 5
+                                    x: cur_layer.rotated_points.x1 + 5,
+                                    y: cur_layer.rotated_points.y1 - 5
                                 },
                                 {
-                                    x: cur_layer.rot_x1 + 5,
-                                    y: cur_layer.rot_y1 + 5
+                                    x: cur_layer.rotated_points.x1 + 5,
+                                    y: cur_layer.rotated_points.y1 + 5
                                 },
                                 {
-                                    x: cur_layer.rot_x1 - 5,
-                                    y: cur_layer.rot_y1 + 5
+                                    x: cur_layer.rotated_points.x1 - 5,
+                                    y: cur_layer.rotated_points.y1 + 5
                                 }
                             ])) {
                                 document.title = "ul";
@@ -425,20 +438,20 @@
                         } else {
                             if (is_inside_shape(cur_x, cur_y, [
                                 {
-                                    x: cur_layer.rot_x1,
-                                    y: cur_layer.rot_y1
+                                    x: cur_layer.rotated_points.x1,
+                                    y: cur_layer.rotated_points.y1
                                 },
                                 {
-                                    x: cur_layer.rot_x2,
-                                    y: cur_layer.rot_y2
+                                    x: cur_layer.rotated_points.x2,
+                                    y: cur_layer.rotated_points.y2
                                 },
                                 {
-                                    x: cur_layer.rot_x3,
-                                    y: cur_layer.rot_y3
+                                    x: cur_layer.rotated_points.x3,
+                                    y: cur_layer.rotated_points.y3
                                 },
                                 {
-                                    x: cur_layer.rot_x4,
-                                    y: cur_layer.rot_y4
+                                    x: cur_layer.rotated_points.x4,
+                                    y: cur_layer.rotated_points.y4
                                 }
                             ])) {
                                 break;
@@ -478,14 +491,14 @@
                             x_move_amt -= cur_layer.x;
                             y_move_amt -= cur_layer.y;
                             
-                            cur_layer.rot_x1 -= x_move_amt;
-                            cur_layer.rot_y1 -= y_move_amt;
-                            cur_layer.rot_x2 -= x_move_amt;
-                            cur_layer.rot_y2 -= y_move_amt;
-                            cur_layer.rot_x3 -= x_move_amt;
-                            cur_layer.rot_y3 -= y_move_amt;
-                            cur_layer.rot_x4 -= x_move_amt;
-                            cur_layer.rot_y4 -= y_move_amt;
+                            cur_layer.rotated_points.x1 -= x_move_amt;
+                            cur_layer.rotated_points.y1 -= y_move_amt;
+                            cur_layer.rotated_points.x2 -= x_move_amt;
+                            cur_layer.rotated_points.y2 -= y_move_amt;
+                            cur_layer.rotated_points.x3 -= x_move_amt;
+                            cur_layer.rotated_points.y3 -= y_move_amt;
+                            cur_layer.rotated_points.x4 -= x_move_amt;
+                            cur_layer.rotated_points.y4 -= y_move_amt;
                             /// Figure out a way to tell the canvas to only redraw the part that changed.
                             redraw();
                         }
@@ -583,8 +596,8 @@
     {
         var count,
             file,
-            files        = e.dataTransfer.files,
-            i            = 0,
+            files = e.dataTransfer.files,
+            i     = 0,
             reader;
         
         e.stopPropagation();
