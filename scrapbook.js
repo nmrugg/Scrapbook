@@ -385,7 +385,6 @@
                                         y: cur_layer.decoration_points[corners].y4
                                     }
                                 ])) {
-                                    document.title = corners;
                                     return corners;
                                 }
                             }
@@ -394,7 +393,7 @@
                             
                         }
                     }
-                    document.title = "";
+                    
                     /// Start with the top layer.
                     i = layers.length - 1;
                     
@@ -476,11 +475,28 @@
                     /// Is the mouse hovering over a layer?
                     if (hover_layer !== tmp_layer) {
                         hover_layer = tmp_layer
-                        //redraw();
+                        
                         if (hover_layer >= 0) {
                             canvas_el.style.cursor = "move";
                         } else {
                             canvas_el.style.cursor = "auto";
+                        }
+                    /// If get_layer_from_pos returns a non-number, it is a deocration.
+                    } else if (typeof tmp_layer == "string") {
+                        /// Resize and Crop can use the same cursor
+                        if (cur_decoration_mode != decoration_rotate) {
+                            ///NOTE: Could also use nesw-resize or nwse-resize cursors instead, but they may be less supported.
+                            if (tmp_layer == "ul") {
+                                canvas_el.style.cursor = "nw-resize";
+                            } else if (tmp_layer == "ur") {
+                                canvas_el.style.cursor = "ne-resize";
+                            } else if (tmp_layer == "bl") {
+                                canvas_el.style.cursor = "sw-resize";
+                            } else if (tmp_layer == "br") {
+                                canvas_el.style.cursor = "se-resize";
+                            }
+                        } else {
+                            ///TODO: Make a rotate cursor image.
                         }
                     }
                 }
