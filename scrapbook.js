@@ -41,7 +41,9 @@
         
         function draw_decoration(cur_layer)
         {
-            var cur_x,
+            var corners,
+                
+                cur_x,
                 cur_y,
                 cur_x2,
                 cur_y2;
@@ -49,51 +51,40 @@
             context.save();
             
             if (cur_layer.angle != 0) {
-                cur_x = 0;
-                cur_y = 0;
-                cur_x2 = cur_layer.width;
-                cur_y2 = cur_layer.height;
-                //context.translate(cur_layer.rotated_points.x1, cur_layer.rotated_points.y1);
-                context.translate(cur_layer.rotated_points.x1, cur_layer.rotated_points.y1);
-                context.rotate(cur_layer.angle);
+                
+                cur_layer.decoration_points = {
+                    ///TODO: Figure out exactly where the points should be.
+                    ul: rotate_rect(cur_layer.angle, cur_layer.rotated_points.x1 - 4.5, cur_layer.rotated_points.y1 - 4.5, 10, 10),
+                    ur: rotate_rect(cur_layer.angle, cur_layer.rotated_points.x2 - 6.5, cur_layer.rotated_points.y2 - 4.5, 10, 10),
+                    br: rotate_rect(cur_layer.angle, cur_layer.rotated_points.x3 - 6.5, cur_layer.rotated_points.y3 - 6.5, 10, 10),
+                    bl: rotate_rect(cur_layer.angle, cur_layer.rotated_points.x4 - 4.5, cur_layer.rotated_points.y4 - 6.5, 10, 10)
+                }
             } else {
                 cur_x = cur_layer.x;
                 cur_y = cur_layer.y;
                 
                 cur_x2 = cur_x + cur_layer.width;
                 cur_y2 = cur_y + cur_layer.height;
+                
+                cur_layer.decoration_points = {
+                    ul: {x1: cur_x  - 4.5, y1: cur_y  - 4.5, x2: cur_x  + 6.5, y2: cur_y  - 4.5, x3: cur_x  + 6.5, y3: cur_y  + 6.5, x4: cur_x  - 4.5, y4: cur_y  + 6.5},
+                    ur: {x1: cur_x2 - 6.5, y1: cur_y  - 4.5, x2: cur_x2 + 4.5, y2: cur_y  - 4.5, x3: cur_x2 + 4.5, y3: cur_y  + 6.5, x4: cur_x2 - 6.5, y4: cur_y  + 6.5},
+                    br: {x1: cur_x2 - 6.5, y1: cur_y2 - 6.5, x2: cur_x2 + 4.5, y2: cur_y2 - 6.5, x3: cur_x2 + 4.5, y3: cur_y2 + 4.5, x4: cur_x2 - 6.5, y4: cur_y2 + 4.5},
+                    bl: {x1: cur_x  - 4.5, y1: cur_y2 - 6.5, x2: cur_x  + 6.5, y2: cur_y2 - 6.5, x3: cur_x  + 6.5, y3: cur_y2 + 4.5, x4: cur_x  - 4.5, y4: cur_y2 + 4.5}
+                }
             }
             
             switch (cur_decoration_mode) {
             case decoration_resize:
-                /// Upper left square
-                context.moveTo(cur_x - 4.5, cur_y - 4.5);
-                context.lineTo(cur_x + 6.5, cur_y - 4.5);
-                context.lineTo(cur_x + 6.5, cur_y + 6.5);
-                context.lineTo(cur_x - 4.5, cur_y + 6.5);
-                context.lineTo(cur_x - 4.5, cur_y - 4.5);
-
                 
-                /// Upper right square
-                context.moveTo(cur_x2 - 6.5, cur_y - 4.5);
-                context.lineTo(cur_x2 + 4.5, cur_y - 4.5);
-                context.lineTo(cur_x2 + 4.5, cur_y + 6.5);
-                context.lineTo(cur_x2 - 6.5, cur_y + 6.5);
-                context.lineTo(cur_x2 - 6.5, cur_y - 4.5);
+                for (corners in cur_layer.decoration_points) {
+                    context.moveTo(cur_layer.decoration_points[corners].x1, cur_layer.decoration_points[corners].y1);
+                    context.lineTo(cur_layer.decoration_points[corners].x2, cur_layer.decoration_points[corners].y2);
+                    context.lineTo(cur_layer.decoration_points[corners].x3, cur_layer.decoration_points[corners].y3);
+                    context.lineTo(cur_layer.decoration_points[corners].x4, cur_layer.decoration_points[corners].y4);
+                    context.lineTo(cur_layer.decoration_points[corners].x1, cur_layer.decoration_points[corners].y1);
+                }
                 
-                /// lower left square
-                context.moveTo(cur_x - 4.5, cur_y2 - 6.5);
-                context.lineTo(cur_x + 6.5, cur_y2 - 6.5);
-                context.lineTo(cur_x + 6.5, cur_y2 + 4.5);
-                context.lineTo(cur_x - 4.5, cur_y2 + 4.5);
-                context.lineTo(cur_x - 4.5, cur_y2 - 6.5);
-                
-                /// lower right square
-                context.moveTo(cur_x2 - 6.5, cur_y2 - 6.5);
-                context.lineTo(cur_x2 + 4.5, cur_y2 - 6.5);
-                context.lineTo(cur_x2 + 4.5, cur_y2 + 4.5);
-                context.lineTo(cur_x2 - 6.5, cur_y2 + 4.5);
-                context.lineTo(cur_x2 - 6.5, cur_y2 - 6.5);
                 context.strokeStyle = "rgba(0,0,0,.5)";
                 context.stroke();
                 
@@ -161,7 +152,8 @@
                 composite: "source-over",
                 opacity:   1,
                 
-                rotated_points: {},
+                decoration_points: {},
+                rotated_points:    {},
                 
                 type: type,
                 
