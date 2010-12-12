@@ -263,7 +263,7 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                rotate(layers[layers.length - 1], 33);
+                //rotate(layers[layers.length - 1], 33);
                 
                 redraw();
             };
@@ -351,7 +351,8 @@
                 
                 return function (cur_pos)
                 {
-                    var cur_layer,
+                    var corners,
+                        cur_layer,
                         cur_x = cur_pos.x,
                         cur_y = cur_pos.y,
                         i,
@@ -361,55 +362,34 @@
                     /// First, check to see if the cursor is hovering over a decoration.
                     if (selected_layer >= 0) {
                         cur_layer = layers[selected_layer];
-                        /// If not rotated
-                        ///TODO: Since the algerithm for the rotated object is almsot as fast, rotated and unrotated could be merged together.
-                        if (cur_layer.angle === 0) {
-                            ///NOTE: Move and Crop decorations are both squares.
-                            if (cur_decoration_mode != decoration_rotate) {
-                                /// Upper left corner
-                                if (cur_layer.x - 5 <= cur_x && cur_layer.x + 5 >= cur_x && cur_layer.y - 5 <= cur_y && cur_layer.y + 5 >= cur_y) {
-                                    /// Is there a better way to return this info?
-                                    document.title = "ul";
-                                    return "ul";
-                                } else if (cur_layer.x + cur_layer.width - 5 <= cur_x && cur_layer.x + cur_layer.width + 5 >= cur_x && cur_layer.y - 5 <= cur_y && cur_layer.y + 5 >= cur_y) {
-                                    /// Is there a better way to return this info?
-                                    document.title = "ur";
-                                    return "ur";
-                                } else if (cur_layer.x + cur_layer.width - 5 <= cur_x && cur_layer.x + cur_layer.width + 5 >= cur_x && cur_layer.y + cur_layer.height - 5 <= cur_y && cur_layer.y + cur_layer.height + 5 >= cur_y) {
-                                    /// Is there a better way to return this info?
-                                    document.title = "br";
-                                    return "br";
-                                } else if (cur_layer.x - 5 <= cur_x && cur_layer.x + 5 >= cur_x && cur_layer.y + cur_layer.height - 5 <= cur_y && cur_layer.y + cur_layer.height + 5 >= cur_y) {
-                                    /// Is there a better way to return this info?
-                                    document.title = "bl";
-                                    return "bl";
+                        ///NOTE: Move and Crop decorations are both squares.
+                        if (cur_decoration_mode != decoration_rotate) {
+                            for (corners in cur_layer.decoration_points) {
+                                if (is_inside_shape(cur_x, cur_y, [
+                                    {
+                                        x: cur_layer.decoration_points[corners].x1,
+                                        y: cur_layer.decoration_points[corners].y1
+                                    },
+                                    {
+                                        x: cur_layer.decoration_points[corners].x2,
+                                        y: cur_layer.decoration_points[corners].y2
+                                    },
+                                    {
+                                        x: cur_layer.decoration_points[corners].x3,
+                                        y: cur_layer.decoration_points[corners].y3
+                                    },
+                                    {
+                                        x: cur_layer.decoration_points[corners].x4,
+                                        y: cur_layer.decoration_points[corners].y4
+                                    }
+                                ])) {
+                                    document.title = corners;
+                                    return corners;
                                 }
-                            /// If the decoration is a rotation circle
-                            } else {
-                            
                             }
+                        /// If the decoration is a rotation circle
                         } else {
-                            if (is_inside_shape(cur_x, cur_y, [
-                                {
-                                    x: cur_layer.rotated_points.x1 - 5,
-                                    y: cur_layer.rotated_points.y1 - 5
-                                },
-                                {
-                                    x: cur_layer.rotated_points.x1 + 5,
-                                    y: cur_layer.rotated_points.y1 - 5
-                                },
-                                {
-                                    x: cur_layer.rotated_points.x1 + 5,
-                                    y: cur_layer.rotated_points.y1 + 5
-                                },
-                                {
-                                    x: cur_layer.rotated_points.x1 - 5,
-                                    y: cur_layer.rotated_points.y1 + 5
-                                }
-                            ])) {
-                                document.title = "ul";
-                                return "ul";
-                            }
+                            
                         }
                     }
                     document.title = "";
@@ -431,19 +411,19 @@
                             if (is_inside_shape(cur_x, cur_y, [
                                 {
                                     x: cur_layer.rotated_points.x1,
-                                    y: cur_layer.rotated_points.y1
+                                    y: cur_layer.corner_points.y1
                                 },
                                 {
-                                    x: cur_layer.rotated_points.x2,
-                                    y: cur_layer.rotated_points.y2
+                                    x: cur_layer.corner_points.x2,
+                                    y: cur_layer.corner_points.y2
                                 },
                                 {
-                                    x: cur_layer.rotated_points.x3,
-                                    y: cur_layer.rotated_points.y3
+                                    x: cur_layer.corner_points.x3,
+                                    y: cur_layer.corner_points.y3
                                 },
                                 {
-                                    x: cur_layer.rotated_points.x4,
-                                    y: cur_layer.rotated_points.y4
+                                    x: cur_layer.corner_points.x4,
+                                    y: cur_layer.corner_points.y4
                                 }
                             ])) {
                                 break;
@@ -483,14 +463,14 @@
                             x_move_amt -= cur_layer.x;
                             y_move_amt -= cur_layer.y;
                             
-                            cur_layer.rotated_points.x1 -= x_move_amt;
-                            cur_layer.rotated_points.y1 -= y_move_amt;
-                            cur_layer.rotated_points.x2 -= x_move_amt;
-                            cur_layer.rotated_points.y2 -= y_move_amt;
-                            cur_layer.rotated_points.x3 -= x_move_amt;
-                            cur_layer.rotated_points.y3 -= y_move_amt;
-                            cur_layer.rotated_points.x4 -= x_move_amt;
-                            cur_layer.rotated_points.y4 -= y_move_amt;
+                            cur_layer.corner_points.x1 -= x_move_amt;
+                            cur_layer.corner_points.y1 -= y_move_amt;
+                            cur_layer.corner_points.x2 -= x_move_amt;
+                            cur_layer.corner_points.y2 -= y_move_amt;
+                            cur_layer.corner_points.x3 -= x_move_amt;
+                            cur_layer.corner_points.y3 -= y_move_amt;
+                            cur_layer.corner_points.x4 -= x_move_amt;
+                            cur_layer.corner_points.y4 -= y_move_amt;
                             /// Figure out a way to tell the canvas to only redraw the part that changed.
                             redraw();
                         }
