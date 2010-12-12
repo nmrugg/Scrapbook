@@ -54,10 +54,10 @@
                 
                 cur_layer.decoration_points = {
                     ///TODO: Figure out exactly where the points should be.
-                    ul: rotate_rect(cur_layer.angle, cur_layer.rotated_points.x1 - 4.5, cur_layer.rotated_points.y1 - 4.5, 10, 10),
-                    ur: rotate_rect(cur_layer.angle, cur_layer.rotated_points.x2 - 6.5, cur_layer.rotated_points.y2 - 4.5, 10, 10),
-                    br: rotate_rect(cur_layer.angle, cur_layer.rotated_points.x3 - 6.5, cur_layer.rotated_points.y3 - 6.5, 10, 10),
-                    bl: rotate_rect(cur_layer.angle, cur_layer.rotated_points.x4 - 4.5, cur_layer.rotated_points.y4 - 6.5, 10, 10)
+                    ul: rotate_rect(cur_layer.angle, cur_layer.corner_points.x1 - 4.5, cur_layer.corner_points.y1 - 4.5, 10, 10),
+                    ur: rotate_rect(cur_layer.angle, cur_layer.corner_points.x2 - 6.5, cur_layer.corner_points.y2 - 4.5, 10, 10),
+                    br: rotate_rect(cur_layer.angle, cur_layer.corner_points.x3 - 6.5, cur_layer.corner_points.y3 - 6.5, 10, 10),
+                    bl: rotate_rect(cur_layer.angle, cur_layer.corner_points.x4 - 4.5, cur_layer.corner_points.y4 - 6.5, 10, 10)
                 }
             } else {
                 cur_x = cur_layer.x;
@@ -153,12 +153,12 @@
                 opacity:   1,
                 
                 decoration_points: {},
-                rotated_points:    {},
+                corner_points:     {},
                 
                 type: type,
                 
                 x: x,
-                y:  y
+                y: y
             }
             
             if (type == "img") {
@@ -182,6 +182,8 @@
                     obj.height = obj.orig_h;
                     obj.width  = obj.orig_w;
                 }
+                
+                obj.corner_points = {x1: x, y1: y, x2: x + obj.width, y2: y, x3: x + obj.width, y3: y + obj.height, x4: x, y4: y + obj.height};
             } else {
                 obj.text = text;
             }
@@ -240,7 +242,7 @@
             cur_layer.angle = angle;
             
             if (angle !== 0) {
-                cur_layer.rotated_points = rotate_rect(angle, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
+                cur_layer.corner_points = rotate_rect(angle, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
             }
         }
         
@@ -402,32 +404,25 @@
                     while (i >= 0) {
                         cur_layer = layers[i];
                         ///TODO: If visible
-                        /// If not rotated
-                        if (cur_layer.angle === 0) {
-                            if (cur_layer.x <= cur_x && cur_layer.x + cur_layer.width >= cur_x && cur_layer.y <= cur_y && cur_layer.y + cur_layer.height >= cur_y) {
-                                break;
+                        if (is_inside_shape(cur_x, cur_y, [
+                            {
+                                x: cur_layer.corner_points.x1,
+                                y: cur_layer.corner_points.y1
+                            },
+                            {
+                                x: cur_layer.corner_points.x2,
+                                y: cur_layer.corner_points.y2
+                            },
+                            {
+                                x: cur_layer.corner_points.x3,
+                                y: cur_layer.corner_points.y3
+                            },
+                            {
+                                x: cur_layer.corner_points.x4,
+                                y: cur_layer.corner_points.y4
                             }
-                        } else {
-                            if (is_inside_shape(cur_x, cur_y, [
-                                {
-                                    x: cur_layer.rotated_points.x1,
-                                    y: cur_layer.corner_points.y1
-                                },
-                                {
-                                    x: cur_layer.corner_points.x2,
-                                    y: cur_layer.corner_points.y2
-                                },
-                                {
-                                    x: cur_layer.corner_points.x3,
-                                    y: cur_layer.corner_points.y3
-                                },
-                                {
-                                    x: cur_layer.corner_points.x4,
-                                    y: cur_layer.corner_points.y4
-                                }
-                            ])) {
-                                break;
-                            }
+                        ])) {
+                            break;
                         }
                         --i;
                     }
