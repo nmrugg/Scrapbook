@@ -17,12 +17,11 @@
             selected_layer = -1,
             
             cur_action,
-            cur_decoration_mode,
-            
+            cur_decoration,
             
             action_idle   = 0,
             action_move   = 1,
-            action_scale  = 2,
+            action_resize = 2,
             action_rotate = 3,
             action_crop   = 4,
             
@@ -30,7 +29,7 @@
             decoration_rotate = 2,
             decoration_crop   = 3;
         
-        cur_decoration_mode = decoration_resize;
+        cur_decoration = decoration_resize;
         
         canvas_el.style.background = "#FFF";
         
@@ -74,7 +73,7 @@
                 }
             }
             
-            switch (cur_decoration_mode) {
+            switch (cur_decoration) {
             case decoration_resize:
                 
                 for (corners in cur_layer.decoration_points) {
@@ -265,7 +264,7 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                //rotate(layers[layers.length - 1], 33);
+                //rotate(layers[layers.length - 1], 10);
                 
                 redraw();
             };
@@ -302,6 +301,8 @@
                 mouse_starting_x,
                 mouse_starting_y,
                 
+                which_decoration,
+                
                 get_layer_from_pos;
             
             get_layer_from_pos = (function ()
@@ -312,8 +313,10 @@
                         points_length = shape.length,
                         positive,
                         sign,
+                        
                         x1,
                         x2,
+                        
                         y1,
                         y2;
                     
@@ -347,7 +350,7 @@
                         ++point;
                     }
                     
-                    /// The area was always the same sign so the point is inside the shape.
+                    /// The area was always the same sign, so the point is inside the shape.
                     return true;
                 }
                 
@@ -365,7 +368,7 @@
                     if (selected_layer >= 0) {
                         cur_layer = layers[selected_layer];
                         ///NOTE: Move and Crop decorations are both squares.
-                        if (cur_decoration_mode != decoration_rotate) {
+                        if (cur_decoration != decoration_rotate) {
                             for (corners in cur_layer.decoration_points) {
                                 if (is_inside_shape(cur_x, cur_y, [
                                     {
@@ -437,16 +440,20 @@
                     cur_y,
                     tmp_layer,
                     x_move_amt,
-                    y_move_amt;
+                    y_move_amt,
+                    
+                    new_width,
+                    new_height;
                 
                 cur_x = cur_pos.x;
                 cur_y = cur_pos.y;
                 
                 if (button_down) {
                     if (selected_layer >= 0) {
-                        /// If moving
+                        
+                        cur_layer = layers[selected_layer];
+                        
                         if (cur_action === action_move) {
-                            cur_layer = layers[selected_layer];
                             
                             x_move_amt = cur_layer.x;
                             y_move_amt = cur_layer.y;
@@ -465,26 +472,46 @@
                             cur_layer.corner_points.y3 -= y_move_amt;
                             cur_layer.corner_points.x4 -= x_move_amt;
                             cur_layer.corner_points.y4 -= y_move_amt;
-                            /// Figure out a way to tell the canvas to only redraw the part that changed.
-                            redraw();
+                        } else if (cur_action === action_resize) {
+                            x_move_amt = mouse_starting_x - cur_x;
+                            y_move_amt = mouse_starting_y - cur_y;
+                            
+                            if (which_decoration == "ul") {
+                                new_width  = cur_layer.width  + x_move_amt;
+                                new_height = cur_layer.height + y_move_amt;
+                                
+                                if (new_width <= 0) {
+                                    cur_layer.x = cur_layer.x + cur_layer.width - 1;
+                                    cur_layer.width = 1;
+                                } else {
+                                    cur_layer.width = new_width;
+                                    cur_layer.x -= x_move_amt;
+                                    mouse_starting_x = cur_x;
+                                }
+                                
+                                if (new_height <= 0) {
+                                    cur_layer.y = cur_layer.y + cur_layer.height - 1;
+                                    cur_layer.height = 1;
+                                } else {
+                                    cur_layer.height = new_height;
+                                    cur_layer.y -= y_move_amt;
+                                    mouse_starting_y = cur_y;
+                                }
+                            }
+                            
                         }
+                        
+                        /// Figure out a way to tell the canvas to only redraw the part that changed.
+                        redraw();
                     }
                 } else {
                     tmp_layer = get_layer_from_pos(cur_pos);
                     
-                    /// Is the mouse hovering over a layer?
-                    if (hover_layer !== tmp_layer) {
-                        hover_layer = tmp_layer
-                        
-                        if (hover_layer >= 0) {
-                            canvas_el.style.cursor = "move";
-                        } else {
-                            canvas_el.style.cursor = "auto";
-                        }
-                    /// If get_layer_from_pos returns a non-number, it is a deocration.
-                    } else if (typeof tmp_layer == "string") {
+                    /// Is the mouse over a decoration?  (If get_layer_from_pos returns a string, it is a deocration.)
+                    if (typeof tmp_layer == "string") {
+                        hover_layer = tmp_layer;
                         /// Resize and Crop can use the same cursor
-                        if (cur_decoration_mode != decoration_rotate) {
+                        if (cur_decoration != decoration_rotate) {
                             ///NOTE: Could also use nesw-resize or nwse-resize cursors instead, but they may be less supported.
                             if (tmp_layer == "ul") {
                                 canvas_el.style.cursor = "nw-resize";
@@ -498,30 +525,65 @@
                         } else {
                             ///TODO: Make a rotate cursor image.
                         }
+                        
+                    /// Is the cursor hovering over something different than before?
+                    } else if (hover_layer !== tmp_layer) {
+                        hover_layer = tmp_layer;
+                        
+                        /// Is the mouse hovering over a layer?
+                        if (hover_layer >= 0) {
+                            canvas_el.style.cursor = "move";
+                        } else {
+                            canvas_el.style.cursor = "auto";
+                        }
+                    
                     }
                 }
             };
             
             canvas_el.onmousedown = function (e)
             {
-                var cur_pos = get_relative_x_y(e);
+                var cur_pos = get_relative_x_y(e),
+                    tmp_layer;
                 
                 button_state = e.button;
                 button_down  = true;
                 
                 /// Store the last layer so that it doesn't have to redraw the entire page.
-                last_layer     = selected_layer;
-                selected_layer = get_layer_from_pos(get_relative_x_y(e));
+                last_layer = selected_layer;
+                tmp_layer  = get_layer_from_pos(get_relative_x_y(e));
                 
-                if (last_layer != selected_layer) {
-                    redraw();
+                if (typeof tmp_layer == "string") {
+                    if (cur_decoration === decoration_resize) {
+                        cur_action = action_resize;
+                    } else if (cur_decoration == decoration_rotate) {
+                        cur_action = action_rotate;
+                    } else if (cur_decoration == decoration_crop) {
+                        cur_action = action_crop;
+                    }
                     
-                    /// Last layer is no longer needed since it finished redrawing the parts that changed.
-                    last_layer = -1;
-                }
-                
-                if (selected_layer >= 0) {
-                    ///TODO: This needs to be determined.
+                    if (cur_decoration != decoration_rotate) {
+                        if (tmp_layer == "ul") {
+                            canvas_el.style.cursor = "nw-resize";
+                        } else if (tmp_layer == "ur") {
+                            canvas_el.style.cursor = "ne-resize";
+                        } else if (tmp_layer == "bl") {
+                            canvas_el.style.cursor = "sw-resize";
+                        } else if (tmp_layer == "br") {
+                            canvas_el.style.cursor = "se-resize";
+                        }
+                    } else {
+                        /// Make a rotate cursor image.
+                    }
+                    
+                    mouse_starting_x = cur_pos.x;
+                    mouse_starting_y = cur_pos.y;
+                    
+                    which_decoration = tmp_layer;
+                    
+                } else if (tmp_layer >= 0) {
+                    selected_layer = tmp_layer;
+                    
                     cur_action = action_move;
                     
                     canvas_el.style.cursor = "move";
@@ -531,6 +593,13 @@
                     
                     layer_starting_x = layers[selected_layer].x;
                     layer_starting_y = layers[selected_layer].y;
+                }
+                
+                if (last_layer != selected_layer) {
+                    redraw();
+                    
+                    /// Last layer is no longer needed since it finished redrawing the parts that changed.
+                    last_layer = -1;
                 }
             };
             
