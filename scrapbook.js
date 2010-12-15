@@ -433,153 +433,187 @@
                 };
             }());
             
-            function get_opposite_points(angle, x1, y1, x2, y2)
+            canvas_el.onmousemove = (function ()
             {
-                var cos2   = Math.pow(Math.cos(angle), 2),
-                    sincos = Math.sin(angle) * Math.cos(angle),
-                    sin2   = Math.pow(Math.sin(angle), 2);
+                function get_opposite_points(angle, x1, y1, x2, y2)
+                {
+                    var cosine = Math.cos(angle),
+                        cos2,
+                        sincos,
+                        sine   = Math.sin(angle),
+                        sin2;
+                    
+                    cos2   = Math.pow(cosine, 2);
+                    sin2   = Math.pow(sine,   2);
+                    sincos = sine * cosine;
+                    
+                    return {
+                        x3: x2 * sin2 + x1 * cos2 + (y2 - y1) * sincos,
+                        y3: y1 * sin2 + y2 * cos2 + (x2 - x1) * sincos,
+                        
+                        x4: x1 * sin2 + x2 * cos2 + (y1 - y2) * sincos,
+                        y4: y2 * sin2 + y1 * cos2 + (x1 - x2) * sincos
+                    };
+                }
                 
-                return {
-                    x3: x2 * sin2 + x1 * cos2 + (y2 - y1) * sincos,
-                    y3: y1 * sin2 + y2 * cos2 + (x2 - x1) * sincos,
+                function find_x_y_before_rotation(angle, x1, y1, x3, y3)
+                {
+                    var center_x = (x1 + x3) / 2,
+                        center_y = (y1 + y3) / 2,
+                        x,
+                        y;
                     
-                    x4: x1 * sin2 + x2 * cos2 + (y1 - y2) * sincos,
-                    y4: y2 * sin2 + y1 * cos2 + (x1 - x2) * sincos
-                };
-            }
-            
-            canvas_el.onmousemove = function (e)
-            {
-                var cur_pos = get_relative_x_y(e),
-                    cur_x,
-                    cur_y,
-                    tmp_layer,
-                    x_move_amt,
-                    y_move_amt,
+                    /// Get points relative to the center of the rectangle.
+                    x = x1 - center_x;
+                    y = y1 - center_y;
                     
-                    new_width,
-                    new_height,
-                    
-                    opposite_points;
-                
-                cur_x = cur_pos.x;
-                cur_y = cur_pos.y;
-                
-                if (button_down) {
-                    if (selected_layer >= 0) {
-                        
-                        cur_layer = layers[selected_layer];
-                        
-                        if (cur_action === action_move) {
-                            
-                            x_move_amt = cur_layer.x;
-                            y_move_amt = cur_layer.y;
-                            
-                            cur_layer.x = layer_starting_x + (cur_x - mouse_starting_x);
-                            cur_layer.y = layer_starting_y + (cur_y - mouse_starting_y);
-                            
-                            x_move_amt -= cur_layer.x;
-                            y_move_amt -= cur_layer.y;
-                            
-                            cur_layer.corner_points.x1 -= x_move_amt;
-                            cur_layer.corner_points.y1 -= y_move_amt;
-                            cur_layer.corner_points.x2 -= x_move_amt;
-                            cur_layer.corner_points.y2 -= y_move_amt;
-                            cur_layer.corner_points.x3 -= x_move_amt;
-                            cur_layer.corner_points.y3 -= y_move_amt;
-                            cur_layer.corner_points.x4 -= x_move_amt;
-                            cur_layer.corner_points.y4 -= y_move_amt;
-                        } else if (cur_action === action_resize) {
-                            
-                            if (cur_layer.angle !== 0) {
-                                cur_layer.corner_points.x1 = cur_x;
-                                cur_layer.corner_points.y1 = cur_y;
-                                
-                                opposite_points = get_opposite_points(cur_layer.angle, cur_x, cur_y, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
-                                
-                                cur_layer.corner_points.x2 = opposite_points.x3;
-                                cur_layer.corner_points.y2 = opposite_points.y3;
-                                
-                                cur_layer.corner_points.x4 = opposite_points.x4;
-                                cur_layer.corner_points.y4 = opposite_points.y4;
-                                
-                                /*
-                                cur_layer.corner_points.x2 = cur_layer.corner_points.x3 * Math.pow(Math.sin(cur_layer.angle), 2) + cur_x * Math.pow(Math.cos(cur_layer.angle), 2) + (cur_layer.corner_points.y3 - cur_y) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
-                                cur_layer.corner_points.y2 = cur_y * Math.pow(Math.sin(cur_layer.angle), 2) + cur_layer.corner_points.y3 * Math.pow(Math.cos(cur_layer.angle), 2) + (cur_layer.corner_points.x3 - cur_x) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
-                                
-                                cur_layer.corner_points.x4 = cur_x * Math.pow(Math.sin(cur_layer.angle), 2) + cur_layer.corner_points.x3 * Math.pow(Math.cos(cur_layer.angle), 2) + (cur_y - cur_layer.corner_points.y3) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
-                                cur_layer.corner_points.y4 = cur_layer.corner_points.y3 * Math.pow(Math.sin(cur_layer.angle), 2) + cur_y * Math.pow(Math.cos(cur_layer.angle), 2) + (cur_x - cur_layer.corner_points.x3) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
-                                */
-                            } else {
-                            
-                                x_move_amt = mouse_starting_x - cur_x;
-                                y_move_amt = mouse_starting_y - cur_y;
-                                
-                                if (which_decoration == "ul") {
-                                    new_width  = cur_layer.width  + x_move_amt;
-                                    new_height = cur_layer.height + y_move_amt;
-                                    
-                                    if (new_width <= 0) {
-                                        cur_layer.x = cur_layer.x + cur_layer.width - 1;
-                                        cur_layer.width = 1;
-                                    } else {
-                                        cur_layer.width = new_width;
-                                        cur_layer.x -= x_move_amt;
-                                        mouse_starting_x = cur_x;
-                                    }
-                                    
-                                    if (new_height <= 0) {
-                                        cur_layer.y = cur_layer.y + cur_layer.height - 1;
-                                        cur_layer.height = 1;
-                                    } else {
-                                        cur_layer.height = new_height;
-                                        cur_layer.y -= y_move_amt;
-                                        mouse_starting_y = cur_y;
-                                    }
-                                }
-                            }
-                            
-                        }
-                        
-                        /// Figure out a way to tell the canvas to only redraw the part that changed.
-                        redraw();
-                    }
-                } else {
-                    tmp_layer = get_layer_from_pos(cur_pos);
-                    
-                    /// Is the mouse over a decoration?  (If get_layer_from_pos returns a string, it is a deocration.)
-                    if (typeof tmp_layer == "string") {
-                        hover_layer = tmp_layer;
-                        /// Resize and Crop can use the same cursor
-                        if (cur_decoration != decoration_rotate) {
-                            ///NOTE: Could also use nesw-resize or nwse-resize cursors instead, but they may be less supported.
-                            if (tmp_layer == "ul") {
-                                canvas_el.style.cursor = "nw-resize";
-                            } else if (tmp_layer == "ur") {
-                                canvas_el.style.cursor = "ne-resize";
-                            } else if (tmp_layer == "bl") {
-                                canvas_el.style.cursor = "sw-resize";
-                            } else if (tmp_layer == "br") {
-                                canvas_el.style.cursor = "se-resize";
-                            }
-                        } else {
-                            ///TODO: Make a rotate cursor image.
-                        }
-                        
-                    /// Is the cursor hovering over something different than before?
-                    } else if (hover_layer !== tmp_layer) {
-                        hover_layer = tmp_layer;
-                        
-                        /// Is the mouse hovering over a layer?
-                        if (hover_layer >= 0) {
-                            canvas_el.style.cursor = "move";
-                        } else {
-                            canvas_el.style.cursor = "auto";
-                        }
-                    
+                    return {
+                        x: Math.round(((Math.cos(-angle) * x - Math.sin(-angle) * y) + center_x) * 100) / 100,
+                        y: Math.round(((Math.sin(-angle) * x + Math.cos(-angle) * y) + center_y) * 100) / 100
                     }
                 }
-            };
+                
+                return function (e)
+                {
+                    var cur_pos = get_relative_x_y(e),
+                        cur_x,
+                        cur_y,
+                        tmp_layer,
+                        x_move_amt,
+                        y_move_amt,
+                        
+                        new_width,
+                        new_height,
+                        
+                        opposite_points;
+                    
+                    cur_x = cur_pos.x;
+                    cur_y = cur_pos.y;
+                    
+                    if (button_down) {
+                        if (selected_layer >= 0) {
+                            
+                            cur_layer = layers[selected_layer];
+                            
+                            if (cur_action === action_move) {
+                                
+                                x_move_amt = cur_layer.x;
+                                y_move_amt = cur_layer.y;
+                                
+                                cur_layer.x = layer_starting_x + (cur_x - mouse_starting_x);
+                                cur_layer.y = layer_starting_y + (cur_y - mouse_starting_y);
+                                
+                                x_move_amt -= cur_layer.x;
+                                y_move_amt -= cur_layer.y;
+                                
+                                cur_layer.corner_points.x1 -= x_move_amt;
+                                cur_layer.corner_points.y1 -= y_move_amt;
+                                cur_layer.corner_points.x2 -= x_move_amt;
+                                cur_layer.corner_points.y2 -= y_move_amt;
+                                cur_layer.corner_points.x3 -= x_move_amt;
+                                cur_layer.corner_points.y3 -= y_move_amt;
+                                cur_layer.corner_points.x4 -= x_move_amt;
+                                cur_layer.corner_points.y4 -= y_move_amt;
+                            } else if (cur_action === action_resize) {
+                                
+                                if (cur_layer.angle !== 0) {
+                                    if (which_decoration == "ul") {
+                                        
+                                        //cur_layer.x -= (cur_layer.corner_points.x1 - cur_x) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
+                                        //cur_layer.y -= (cur_layer.corner_points.y1 - cur_y) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
+                                        
+                                        
+                                        cur_layer.corner_points.x1 = cur_x;
+                                        cur_layer.corner_points.y1 = cur_y;
+                                    
+                                        opposite_points = get_opposite_points(cur_layer.angle, cur_x, cur_y, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
+                                        
+                                        cur_layer.corner_points.x2 = opposite_points.x3;
+                                        cur_layer.corner_points.y2 = opposite_points.y3;
+                                        
+                                        cur_layer.corner_points.x4 = opposite_points.x4;
+                                        cur_layer.corner_points.y4 = opposite_points.y4;
+                                    }
+                                    
+                                    var tmp = find_x_y_before_rotation(cur_layer.angle, cur_layer.corner_points.x1, cur_layer.corner_points.y1, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
+                                    
+                                    cur_layer.x = tmp.x;
+                                    cur_layer.y = tmp.y;
+                                    
+                                    cur_layer.width  = Math.sqrt(Math.pow(cur_layer.corner_points.x2 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y2 - cur_layer.corner_points.y1, 2));
+                                    cur_layer.height = Math.sqrt(Math.pow(cur_layer.corner_points.x4 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y4 - cur_layer.corner_points.y1, 2));
+                                    
+                                } else {
+                                
+                                    x_move_amt = mouse_starting_x - cur_x;
+                                    y_move_amt = mouse_starting_y - cur_y;
+                                    
+                                    if (which_decoration == "ul") {
+                                        new_width  = cur_layer.width  + x_move_amt;
+                                        new_height = cur_layer.height + y_move_amt;
+                                        
+                                        if (new_width <= 0) {
+                                            cur_layer.x = cur_layer.x + cur_layer.width - 1;
+                                            cur_layer.width = 1;
+                                        } else {
+                                            cur_layer.width = new_width;
+                                            cur_layer.x -= x_move_amt;
+                                            mouse_starting_x = cur_x;
+                                        }
+                                        
+                                        if (new_height <= 0) {
+                                            cur_layer.y = cur_layer.y + cur_layer.height - 1;
+                                            cur_layer.height = 1;
+                                        } else {
+                                            cur_layer.height = new_height;
+                                            cur_layer.y -= y_move_amt;
+                                            mouse_starting_y = cur_y;
+                                        }
+                                    }
+                                }
+                                
+                            }
+                            
+                            /// Figure out a way to tell the canvas to only redraw the part that changed.
+                            redraw();
+                        }
+                    } else {
+                        tmp_layer = get_layer_from_pos(cur_pos);
+                        
+                        /// Is the mouse over a decoration?  (If get_layer_from_pos returns a string, it is a deocration.)
+                        if (typeof tmp_layer == "string") {
+                            hover_layer = tmp_layer;
+                            /// Resize and Crop can use the same cursor
+                            if (cur_decoration != decoration_rotate) {
+                                ///NOTE: Could also use nesw-resize or nwse-resize cursors instead, but they may be less supported.
+                                if (tmp_layer == "ul") {
+                                    canvas_el.style.cursor = "nw-resize";
+                                } else if (tmp_layer == "ur") {
+                                    canvas_el.style.cursor = "ne-resize";
+                                } else if (tmp_layer == "bl") {
+                                    canvas_el.style.cursor = "sw-resize";
+                                } else if (tmp_layer == "br") {
+                                    canvas_el.style.cursor = "se-resize";
+                                }
+                            } else {
+                                ///TODO: Make a rotate cursor image.
+                            }
+                            
+                        /// Is the cursor hovering over something different than before?
+                        } else if (hover_layer !== tmp_layer) {
+                            hover_layer = tmp_layer;
+                            
+                            /// Is the mouse hovering over a layer?
+                            if (hover_layer >= 0) {
+                                canvas_el.style.cursor = "move";
+                            } else {
+                                canvas_el.style.cursor = "auto";
+                            }
+                        
+                        }
+                    }
+                };
+            }());
             
             canvas_el.onmousedown = function (e)
             {
