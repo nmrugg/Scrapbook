@@ -264,7 +264,7 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                //rotate(layers[layers.length - 1], 10);
+                rotate(layers[layers.length - 1], 45);
                 
                 redraw();
             };
@@ -433,6 +433,21 @@
                 };
             }());
             
+            function get_opposite_points(angle, x1, y1, x2, y2)
+            {
+                var cos2   = Math.pow(Math.cos(angle), 2),
+                    sincos = Math.sin(angle) * Math.cos(angle),
+                    sin2   = Math.pow(Math.sin(angle), 2);
+                
+                return {
+                    x3: x2 * sin2 + x1 * cos2 + (y2 - y1) * sincos,
+                    y3: y1 * sin2 + y2 * cos2 + (x2 - x1) * sincos,
+                    
+                    x4: x1 * sin2 + x2 * cos2 + (y1 - y2) * sincos,
+                    y4: y2 * sin2 + y1 * cos2 + (x1 - x2) * sincos
+                };
+            }
+            
             canvas_el.onmousemove = function (e)
             {
                 var cur_pos = get_relative_x_y(e),
@@ -443,7 +458,9 @@
                     y_move_amt,
                     
                     new_width,
-                    new_height;
+                    new_height,
+                    
+                    opposite_points;
                 
                 cur_x = cur_pos.x;
                 cur_y = cur_pos.y;
@@ -473,29 +490,52 @@
                             cur_layer.corner_points.x4 -= x_move_amt;
                             cur_layer.corner_points.y4 -= y_move_amt;
                         } else if (cur_action === action_resize) {
-                            x_move_amt = mouse_starting_x - cur_x;
-                            y_move_amt = mouse_starting_y - cur_y;
                             
-                            if (which_decoration == "ul") {
-                                new_width  = cur_layer.width  + x_move_amt;
-                                new_height = cur_layer.height + y_move_amt;
+                            if (cur_layer.angle !== 0) {
+                                cur_layer.corner_points.x1 = cur_x;
+                                cur_layer.corner_points.y1 = cur_y;
                                 
-                                if (new_width <= 0) {
-                                    cur_layer.x = cur_layer.x + cur_layer.width - 1;
-                                    cur_layer.width = 1;
-                                } else {
-                                    cur_layer.width = new_width;
-                                    cur_layer.x -= x_move_amt;
-                                    mouse_starting_x = cur_x;
-                                }
+                                opposite_points = get_opposite_points(cur_layer.angle, cur_x, cur_y, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
                                 
-                                if (new_height <= 0) {
-                                    cur_layer.y = cur_layer.y + cur_layer.height - 1;
-                                    cur_layer.height = 1;
-                                } else {
-                                    cur_layer.height = new_height;
-                                    cur_layer.y -= y_move_amt;
-                                    mouse_starting_y = cur_y;
+                                cur_layer.corner_points.x2 = opposite_points.x3;
+                                cur_layer.corner_points.y2 = opposite_points.y3;
+                                
+                                cur_layer.corner_points.x4 = opposite_points.x4;
+                                cur_layer.corner_points.y4 = opposite_points.y4;
+                                
+                                /*
+                                cur_layer.corner_points.x2 = cur_layer.corner_points.x3 * Math.pow(Math.sin(cur_layer.angle), 2) + cur_x * Math.pow(Math.cos(cur_layer.angle), 2) + (cur_layer.corner_points.y3 - cur_y) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
+                                cur_layer.corner_points.y2 = cur_y * Math.pow(Math.sin(cur_layer.angle), 2) + cur_layer.corner_points.y3 * Math.pow(Math.cos(cur_layer.angle), 2) + (cur_layer.corner_points.x3 - cur_x) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
+                                
+                                cur_layer.corner_points.x4 = cur_x * Math.pow(Math.sin(cur_layer.angle), 2) + cur_layer.corner_points.x3 * Math.pow(Math.cos(cur_layer.angle), 2) + (cur_y - cur_layer.corner_points.y3) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
+                                cur_layer.corner_points.y4 = cur_layer.corner_points.y3 * Math.pow(Math.sin(cur_layer.angle), 2) + cur_y * Math.pow(Math.cos(cur_layer.angle), 2) + (cur_x - cur_layer.corner_points.x3) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
+                                */
+                            } else {
+                            
+                                x_move_amt = mouse_starting_x - cur_x;
+                                y_move_amt = mouse_starting_y - cur_y;
+                                
+                                if (which_decoration == "ul") {
+                                    new_width  = cur_layer.width  + x_move_amt;
+                                    new_height = cur_layer.height + y_move_amt;
+                                    
+                                    if (new_width <= 0) {
+                                        cur_layer.x = cur_layer.x + cur_layer.width - 1;
+                                        cur_layer.width = 1;
+                                    } else {
+                                        cur_layer.width = new_width;
+                                        cur_layer.x -= x_move_amt;
+                                        mouse_starting_x = cur_x;
+                                    }
+                                    
+                                    if (new_height <= 0) {
+                                        cur_layer.y = cur_layer.y + cur_layer.height - 1;
+                                        cur_layer.height = 1;
+                                    } else {
+                                        cur_layer.height = new_height;
+                                        cur_layer.y -= y_move_amt;
+                                        mouse_starting_y = cur_y;
+                                    }
                                 }
                             }
                             
