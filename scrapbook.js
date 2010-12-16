@@ -264,7 +264,7 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                rotate(layers[layers.length - 1], 45);
+                rotate(layers[layers.length - 1], 89);
                 
                 redraw();
             };
@@ -437,10 +437,10 @@
             {
                 function get_opposite_points(angle, x1, y1, x2, y2)
                 {
-                    var cosine = Math.cos(angle),
+                    var cosine = Math.cos(-angle),
                         cos2,
                         sincos,
-                        sine   = Math.sin(angle),
+                        sine   = Math.sin(-angle),
                         sin2;
                     
                     cos2   = Math.pow(cosine, 2);
@@ -448,11 +448,11 @@
                     sincos = sine * cosine;
                     
                     return {
-                        x3: x2 * sin2 + x1 * cos2 + (y2 - y1) * sincos,
-                        y3: y1 * sin2 + y2 * cos2 + (x2 - x1) * sincos,
+                        x3: x1 * sin2 + x2 * cos2 + (y1 - y2) * sincos,
+                        y3: y2 * sin2 + y1 * cos2 + (x1 - x2) * sincos,
                         
-                        x4: x1 * sin2 + x2 * cos2 + (y1 - y2) * sincos,
-                        y4: y2 * sin2 + y1 * cos2 + (x1 - x2) * sincos
+                        x4: x2 * sin2 + x1 * cos2 + (y2 - y1) * sincos,
+                        y4: y1 * sin2 + y2 * cos2 + (x2 - x1) * sincos
                     };
                 }
                 
@@ -518,11 +518,6 @@
                                 
                                 if (cur_layer.angle !== 0) {
                                     if (which_decoration == "ul") {
-                                        
-                                        //cur_layer.x -= (cur_layer.corner_points.x1 - cur_x) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
-                                        //cur_layer.y -= (cur_layer.corner_points.y1 - cur_y) * Math.sin(cur_layer.angle) * Math.cos(cur_layer.angle);
-                                        
-                                        
                                         cur_layer.corner_points.x1 = cur_x;
                                         cur_layer.corner_points.y1 = cur_y;
                                     
