@@ -528,6 +528,17 @@
                                         
                                         cur_layer.corner_points.x4 = opposite_points.x4;
                                         cur_layer.corner_points.y4 = opposite_points.y4;
+                                    } else if (which_decoration == "ur") {
+                                        cur_layer.corner_points.x2 = cur_x;
+                                        cur_layer.corner_points.y2 = cur_y;
+                                    
+                                        opposite_points = get_opposite_points(cur_layer.angle, cur_x, cur_y, cur_layer.corner_points.x4, cur_layer.corner_points.y4);
+                                        
+                                        cur_layer.corner_points.x1 = opposite_points.x3;
+                                        cur_layer.corner_points.y1 = opposite_points.y3;
+                                        
+                                        cur_layer.corner_points.x3 = opposite_points.x4;
+                                        cur_layer.corner_points.y3 = opposite_points.y4;
                                     }
                                     
                                     var tmp = find_x_y_before_rotation(cur_layer.angle, cur_layer.corner_points.x1, cur_layer.corner_points.y1, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
