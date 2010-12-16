@@ -485,7 +485,8 @@
                         new_width,
                         new_height,
                         
-                        opposite_points;
+                        opposite_points,
+                        unrotated_x_y;
                     
                     cur_x = cur_pos.x;
                     cur_y = cur_pos.y;
@@ -563,10 +564,10 @@
                                         cur_layer.corner_points.y1 = opposite_points.y4;
                                     }
                                     
-                                    var tmp = find_x_y_before_rotation(cur_layer.angle, cur_layer.corner_points.x1, cur_layer.corner_points.y1, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
+                                    unrotated_x_y = find_x_y_before_rotation(cur_layer.angle, cur_layer.corner_points.x1, cur_layer.corner_points.y1, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
                                     
-                                    cur_layer.x = tmp.x;
-                                    cur_layer.y = tmp.y;
+                                    cur_layer.x = unrotated_x_y.x;
+                                    cur_layer.y = unrotated_x_y.y;
                                     
                                     cur_layer.width  = Math.sqrt(Math.pow(cur_layer.corner_points.x2 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y2 - cur_layer.corner_points.y1, 2));
                                     cur_layer.height = Math.sqrt(Math.pow(cur_layer.corner_points.x4 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y4 - cur_layer.corner_points.y1, 2));
