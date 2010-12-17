@@ -182,7 +182,22 @@
                     obj.width  = obj.orig_w;
                 }
                 
-                obj.corner_points = {x1: x, y1: y, x2: x + obj.width, y2: y, x3: x + obj.width, y3: y + obj.height, x4: x, y4: y + obj.height};
+                obj.corner_points = {
+                    x1: x,
+                    y1: y,
+                    
+                    x2: x + obj.width,
+                    y2: y,
+                    
+                    x3: x + obj.width,
+                    y3: y + obj.height,
+                    
+                    x4: x,
+                    y4: y + obj.height
+                };
+                
+                obj.orig_aspect_ratio = obj.orig_w / obj.orig_h;
+                obj.aspect_ratio      = obj.orig_aspect_ratio;
             } else {
                 obj.text = text;
             }
@@ -207,7 +222,10 @@
                 x1,
                 x2,
                 y1,
-                y2;
+                y2,
+                
+                cosine = Math.cos(angle),
+                sine   = Math.sin(angle);
             
             center_x = x + (w / 2);
             center_y = y + (h / 2);
@@ -219,17 +237,17 @@
             y2 = (y + h) - center_y;
             
             return {
-                x1: Math.round(((Math.cos(angle) * x1 - Math.sin(angle) * y1) + center_x) * 100) / 100,
-                y1: Math.round(((Math.sin(angle) * x1 + Math.cos(angle) * y1) + center_y) * 100) / 100,
+                x1: Math.round(((cosine * x1 - sine   * y1) + center_x) * 100) / 100,
+                y1: Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100,
                 
-                x2: Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y1) + center_x) * 100) / 100,
-                y2: Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y1) + center_y) * 100) / 100,
+                x2: Math.round(((cosine * x2 - sine   * y1) + center_x) * 100) / 100,
+                y2: Math.round(((sine   * x2 + cosine * y1) + center_y) * 100) / 100,
                 
-                x3: Math.round(((Math.cos(angle) * x2 - Math.sin(angle) * y2) + center_x) * 100) / 100,
-                y3: Math.round(((Math.sin(angle) * x2 + Math.cos(angle) * y2) + center_y) * 100) / 100,
+                x3: Math.round(((cosine * x2 - sine   * y2) + center_x) * 100) / 100,
+                y3: Math.round(((sine   * x2 + cosine * y2) + center_y) * 100) / 100,
             
-                x4: Math.round(((Math.cos(angle) * x1 - Math.sin(angle) * y2) + center_x) * 100) / 100,
-                y4: Math.round(((Math.sin(angle) * x1 + Math.cos(angle) * y2) + center_y) * 100) / 100
+                x4: Math.round(((cosine * x1 - sine   * y2) + center_x) * 100) / 100,
+                y4: Math.round(((sine   * x1 + cosine * y2) + center_y) * 100) / 100
             }
         }
         
