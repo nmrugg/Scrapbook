@@ -282,7 +282,7 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                rotate(layers[layers.length - 1], 33);
+                rotate(layers[layers.length - 1], 10);
                 
                 redraw();
             };
@@ -481,27 +481,111 @@
                         var center_x = (x1 + x3) / 2,
                             center_y = (y1 + y3) / 2,
                             x,
-                            y;
+                            y,
+                            
+                            neg_cosine = Math.cos(-angle),
+                            neg_sine   = Math.sin(-angle);
                         
                         /// Get points relative to the center of the rectangle.
                         x = x1 - center_x;
                         y = y1 - center_y;
                         
                         return {
-                            x: Math.round(((Math.cos(-angle) * x - Math.sin(-angle) * y) + center_x) * 100) / 100,
-                            y: Math.round(((Math.sin(-angle) * x + Math.cos(-angle) * y) + center_y) * 100) / 100
+                            x: Math.round(((neg_cosine * x - neg_sine   * y) + center_x) * 100) / 100,
+                            y: Math.round(((neg_sine   * x + neg_cosine * y) + center_y) * 100) / 100
                         }
                     }
-                
-                    return function (cur_layer, keep_aspect_ratio, new_x, new_y, points)
+                    
+                    function check_dimensions(angle, new_pos, opposite_pos, should_x1_be_less, should_y1_be_less)
+                    {
+                        var center_x = (new_pos.x + opposite_pos.x) / 2,
+                            center_y = (new_pos.y + opposite_pos.y) / 2,
+                            
+                            cosine = Math.cos(angle),
+                            sine   = Math.sin(angle),
+                            
+                            neg_cosine = Math.cos(-angle),
+                            neg_sine   = Math.sin(-angle),
+                            
+                            x1,
+                            y1,
+                            
+                            x3,
+                            y3,
+                            
+                            /// Get points relative to the center of the rectangle.
+                            x1_rel = Math.round((new_pos.x - center_x) * 100) / 100,
+                            y1_rel = Math.round((new_pos.y - center_y) * 100) / 100,
+                            
+                            x3_rel = Math.round((opposite_pos.x - center_x) * 100) / 100,
+                            y3_rel = Math.round((opposite_pos.y - center_y) * 100) / 100,
+                            
+                            change_x = false,
+                            change_y = false;
+                        
+                        x1 = Math.round((neg_cosine * x1_rel - neg_sine   * y1_rel) * 100) / 100;
+                        //y1 = Math.round((neg_sine   * x1_rel + neg_cosine * y1_rel) * 100) / 100;
+                        y1 = (neg_sine   * x1_rel + neg_cosine * y1_rel);
+                        
+                        x3 = Math.round((neg_cosine * x3_rel - neg_sine   * y3_rel) * 100) / 100;
+                        y3 = Math.round((neg_sine   * x3_rel + neg_cosine * y3_rel) * 100) / 100;
+                        
+                        //document.title = x1 + " > " + x3;
+                        //document.title = new_pos.x + " " + x1 + " " + (Math.round((cosine * Math.round(x1 - center_x) - sine   * Math.round(y1 - center_y)) + center_x));
+                        /*
+                        var x0 = Math.round((new_pos.x - center_x) * 100) / 100;
+                        var y0 = Math.round((new_pos.y - center_y) * 100) / 100;
+                        var rot_x0 = Math.round(((neg_cosine * x0 - neg_sine   * y0) + 0) * 100) / 100;
+                        var rot_y0 = Math.round(((neg_sine   * x0 + neg_cosine * y0) + 0) * 100) / 100;
+                        
+                        var orig_x0 = Math.round(((cosine * rot_x0 - sine   * rot_y0) + 0) * 100) / 100;
+                        var orig_y0 = Math.round(((sine   * rot_x0 + cosine * rot_y0) + 0) * 100) / 100;
+                        
+                        //document.title = "(" + x0 + ", " + y0 + ") (" + "(" + rot_x0 + ", " + rot_y0 + ") (" + "(" + orig_x0 + ", " + orig_y0 + ")";
+                        document.title = "(" + x0 + ", " + y0 + ") (" + orig_x0 + ", " + orig_y0 + ")";
+                        */
+                                 //x3: x1 * sin2 + x2 * cos2 + (y1 - y2) * sincos,
+                        if (x1 > x3 && should_x1_be_less) {
+                            //x1_rel = -1;
+                            //x1 = Math.round((x3 - 1) * 100) / 100;
+                            x1 = x3 - 1;
+                            //new_pos.x = new_pos.x * (neg_sine * neg_sine) + opposite_pos.x * (neg_cosine * neg_cosine) + (new_pos.y - opposite_pos.y) * (neg_sine * neg_cosine);
+                            
+                            change_x = true;
+                        }
+                        
+                        if (y1 > y3 && should_y1_be_less) {
+                            y1 = y3 - 1;
+                            //y1_rel = -1;
+                            change_y = true;
+                        }
+                        
+                        //document.title = x1 + " " + y1 + " | " + x3 + " " + y3;
+                        if (change_x) {
+                            //new_pos.x = Math.round(((cosine * .5 - sine   * (y1)) + center_x) * 100) / 100;
+                            //new_pos.x = opposite_pos.x;
+                            //new_pos.x = Math.round(((cosine * x1_rel - sine   * y1_rel) + opposite_pos.x) * 100) / 100
+                            document.title = "Math.round(((" + cosine + " * " + x1 + " - sine * " +  y1 + ") + " + center_x + ") * 100) / 100;";
+                            new_pos.x = Math.round(((cosine * x1 - sine   * y1) + center_x) * 100) / 100;
+                            new_pos.y = Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100;
+                        }
+                        
+                        if (change_y) {
+                            //new_pos.y = Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100;
+                        }
+                    }
+                    
+                    return function (cur_layer, keep_aspect_ratio, new_pos, points)
                     {
                         var opposite_points,
                             unrotated_x_y;
                         
-                        cur_layer.corner_points[points.x1] = new_x;
-                        cur_layer.corner_points[points.y1] = new_y;
-                    
-                        opposite_points = get_opposite_points(cur_layer.angle, new_x, new_y, cur_layer.corner_points[points.x3], cur_layer.corner_points[points.y3]);
+                        check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x3"), (points.y1 == "y1" || points.y1 == "y2"));
+                        
+                        opposite_points = get_opposite_points(cur_layer.angle, new_pos.x, new_pos.y, cur_layer.corner_points[points.x3], cur_layer.corner_points[points.y3]);
+                        
+                        cur_layer.corner_points[points.x1] = new_pos.x;
+                        cur_layer.corner_points[points.y1] = new_pos.y;
                         
                         cur_layer.corner_points[points.x2] = opposite_points.x3;
                         cur_layer.corner_points[points.y2] = opposite_points.y3;
@@ -564,13 +648,13 @@
                                 
                                 if (cur_layer.angle !== 0) {
                                     if (which_decoration == "ul") {
-                                        resize_layer(cur_layer, keep_aspect_ratio, cur_x, cur_y, {x1: "x1", y1: "y1", x2: "x2", y2: "y2", x3: "x3", y3: "y3", x4: "x4", y4: "y4"});
+                                        resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x1", y1: "y1", x2: "x2", y2: "y2", x3: "x3", y3: "y3", x4: "x4", y4: "y4"});
                                     } else if (which_decoration == "ur") {
-                                        resize_layer(cur_layer, keep_aspect_ratio, cur_x, cur_y, {x1: "x2", y1: "y2", x2: "x1", y2: "y1", x3: "x4", y3: "y4", x4: "x3", y4: "y3"});
+                                        resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x2", y1: "y2", x2: "x1", y2: "y1", x3: "x4", y3: "y4", x4: "x3", y4: "y3"});
                                     } else if (which_decoration == "br") {
-                                        resize_layer(cur_layer, keep_aspect_ratio, cur_x, cur_y, {x1: "x3", y1: "y3", x2: "x4", y2: "y4", x3: "x1", y3: "y1", x4: "x2", y4: "y2"});
+                                        resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x3", y1: "y3", x2: "x4", y2: "y4", x3: "x1", y3: "y1", x4: "x2", y4: "y2"});
                                     } else if (which_decoration == "bl") {
-                                        resize_layer(cur_layer, keep_aspect_ratio, cur_x, cur_y, {x1: "x4", y1: "y4", x2: "x3", y2: "y3", x3: "x2", y3: "y2", x4: "x1", y4: "y1"});
+                                        resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x4", y1: "y4", x2: "x3", y2: "y3", x3: "x2", y3: "y2", x4: "x1", y4: "y1"});
                                     }
                                     
                                 } else {
