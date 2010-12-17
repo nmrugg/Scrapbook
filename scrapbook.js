@@ -453,43 +453,71 @@
             
             canvas_el.onmousemove = (function ()
             {
-                function get_opposite_points(angle, x1, y1, x2, y2)
+                var resize_layer = (function ()
                 {
-                    var cosine = Math.cos(-angle),
-                        cos2,
-                        sincos,
-                        sine   = Math.sin(-angle),
-                        sin2;
-                    
-                    cos2   = Math.pow(cosine, 2);
-                    sin2   = Math.pow(sine,   2);
-                    sincos = sine * cosine;
-                    
-                    return {
-                        x3: x1 * sin2 + x2 * cos2 + (y1 - y2) * sincos,
-                        y3: y2 * sin2 + y1 * cos2 + (x1 - x2) * sincos,
+                    function get_opposite_points(angle, x1, y1, x2, y2)
+                    {
+                        var cosine = Math.cos(-angle),
+                            cos2,
+                            sincos,
+                            sine   = Math.sin(-angle),
+                            sin2;
                         
-                        x4: x2 * sin2 + x1 * cos2 + (y2 - y1) * sincos,
-                        y4: y1 * sin2 + y2 * cos2 + (x2 - x1) * sincos
-                    };
-                }
-                
-                function find_x_y_before_rotation(angle, x1, y1, x3, y3)
-                {
-                    var center_x = (x1 + x3) / 2,
-                        center_y = (y1 + y3) / 2,
-                        x,
-                        y;
-                    
-                    /// Get points relative to the center of the rectangle.
-                    x = x1 - center_x;
-                    y = y1 - center_y;
-                    
-                    return {
-                        x: Math.round(((Math.cos(-angle) * x - Math.sin(-angle) * y) + center_x) * 100) / 100,
-                        y: Math.round(((Math.sin(-angle) * x + Math.cos(-angle) * y) + center_y) * 100) / 100
+                        cos2   = Math.pow(cosine, 2);
+                        sin2   = Math.pow(sine,   2);
+                        sincos = sine * cosine;
+                        
+                        return {
+                            x3: x1 * sin2 + x2 * cos2 + (y1 - y2) * sincos,
+                            y3: y2 * sin2 + y1 * cos2 + (x1 - x2) * sincos,
+                            
+                            x4: x2 * sin2 + x1 * cos2 + (y2 - y1) * sincos,
+                            y4: y1 * sin2 + y2 * cos2 + (x2 - x1) * sincos
+                        };
                     }
-                }
+                    
+                    function find_x_y_before_rotation(angle, x1, y1, x3, y3)
+                    {
+                        var center_x = (x1 + x3) / 2,
+                            center_y = (y1 + y3) / 2,
+                            x,
+                            y;
+                        
+                        /// Get points relative to the center of the rectangle.
+                        x = x1 - center_x;
+                        y = y1 - center_y;
+                        
+                        return {
+                            x: Math.round(((Math.cos(-angle) * x - Math.sin(-angle) * y) + center_x) * 100) / 100,
+                            y: Math.round(((Math.sin(-angle) * x + Math.cos(-angle) * y) + center_y) * 100) / 100
+                        }
+                    }
+                
+                    return function (cur_layer, keep_aspect_ratio, new_x, new_y, points)
+                    {
+                        var opposite_points,
+                            unrotated_x_y;
+                        
+                        cur_layer.corner_points[points.x1] = new_x;
+                        cur_layer.corner_points[points.y1] = new_y;
+                    
+                        opposite_points = get_opposite_points(cur_layer.angle, new_x, new_y, cur_layer.corner_points[points.x3], cur_layer.corner_points[points.y3]);
+                        
+                        cur_layer.corner_points[points.x2] = opposite_points.x3;
+                        cur_layer.corner_points[points.y2] = opposite_points.y3;
+                        
+                        cur_layer.corner_points[points.x4] = opposite_points.x4;
+                        cur_layer.corner_points[points.y4] = opposite_points.y4;
+                        
+                        unrotated_x_y = find_x_y_before_rotation(cur_layer.angle, cur_layer.corner_points.x1, cur_layer.corner_points.y1, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
+                        
+                        cur_layer.x = unrotated_x_y.x;
+                        cur_layer.y = unrotated_x_y.y;
+                        
+                        cur_layer.width  = Math.sqrt(Math.pow(cur_layer.corner_points.x2 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y2 - cur_layer.corner_points.y1, 2));
+                        cur_layer.height = Math.sqrt(Math.pow(cur_layer.corner_points.x4 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y4 - cur_layer.corner_points.y1, 2));
+                    };
+                }());
                 
                 return function (e)
                 {
@@ -503,8 +531,7 @@
                         new_width,
                         new_height,
                         
-                        opposite_points,
-                        unrotated_x_y;
+                        keep_aspect_ratio = !e.shiftKey;
                     
                     cur_x = cur_pos.x;
                     cur_y = cur_pos.y;
@@ -537,58 +564,14 @@
                                 
                                 if (cur_layer.angle !== 0) {
                                     if (which_decoration == "ul") {
-                                        cur_layer.corner_points.x1 = cur_x;
-                                        cur_layer.corner_points.y1 = cur_y;
-                                    
-                                        opposite_points = get_opposite_points(cur_layer.angle, cur_x, cur_y, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
-                                        
-                                        cur_layer.corner_points.x2 = opposite_points.x3;
-                                        cur_layer.corner_points.y2 = opposite_points.y3;
-                                        
-                                        cur_layer.corner_points.x4 = opposite_points.x4;
-                                        cur_layer.corner_points.y4 = opposite_points.y4;
+                                        resize_layer(cur_layer, keep_aspect_ratio, cur_x, cur_y, {x1: "x1", y1: "y1", x2: "x2", y2: "y2", x3: "x3", y3: "y3", x4: "x4", y4: "y4"});
                                     } else if (which_decoration == "ur") {
-                                        cur_layer.corner_points.x2 = cur_x;
-                                        cur_layer.corner_points.y2 = cur_y;
-                                    
-                                        opposite_points = get_opposite_points(cur_layer.angle, cur_x, cur_y, cur_layer.corner_points.x4, cur_layer.corner_points.y4);
-                                        
-                                        cur_layer.corner_points.x1 = opposite_points.x3;
-                                        cur_layer.corner_points.y1 = opposite_points.y3;
-                                        
-                                        cur_layer.corner_points.x3 = opposite_points.x4;
-                                        cur_layer.corner_points.y3 = opposite_points.y4;
+                                        resize_layer(cur_layer, keep_aspect_ratio, cur_x, cur_y, {x1: "x2", y1: "y2", x2: "x1", y2: "y1", x3: "x4", y3: "y4", x4: "x3", y4: "y3"});
                                     } else if (which_decoration == "br") {
-                                        cur_layer.corner_points.x3 = cur_x;
-                                        cur_layer.corner_points.y3 = cur_y;
-                                    
-                                        opposite_points = get_opposite_points(cur_layer.angle, cur_x, cur_y, cur_layer.corner_points.x1, cur_layer.corner_points.y1);
-                                        
-                                        cur_layer.corner_points.x4 = opposite_points.x3;
-                                        cur_layer.corner_points.y4 = opposite_points.y3;
-                                        
-                                        cur_layer.corner_points.x2 = opposite_points.x4;
-                                        cur_layer.corner_points.y2 = opposite_points.y4;
+                                        resize_layer(cur_layer, keep_aspect_ratio, cur_x, cur_y, {x1: "x3", y1: "y3", x2: "x4", y2: "y4", x3: "x1", y3: "y1", x4: "x2", y4: "y2"});
                                     } else if (which_decoration == "bl") {
-                                        cur_layer.corner_points.x4 = cur_x;
-                                        cur_layer.corner_points.y4 = cur_y;
-                                    
-                                        opposite_points = get_opposite_points(cur_layer.angle, cur_x, cur_y, cur_layer.corner_points.x2, cur_layer.corner_points.y2);
-                                        
-                                        cur_layer.corner_points.x3 = opposite_points.x3;
-                                        cur_layer.corner_points.y3 = opposite_points.y3;
-                                        
-                                        cur_layer.corner_points.x1 = opposite_points.x4;
-                                        cur_layer.corner_points.y1 = opposite_points.y4;
+                                        resize_layer(cur_layer, keep_aspect_ratio, cur_x, cur_y, {x1: "x4", y1: "y4", x2: "x3", y2: "y3", x3: "x2", y3: "y2", x4: "x1", y4: "y1"});
                                     }
-                                    
-                                    unrotated_x_y = find_x_y_before_rotation(cur_layer.angle, cur_layer.corner_points.x1, cur_layer.corner_points.y1, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
-                                    
-                                    cur_layer.x = unrotated_x_y.x;
-                                    cur_layer.y = unrotated_x_y.y;
-                                    
-                                    cur_layer.width  = Math.sqrt(Math.pow(cur_layer.corner_points.x2 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y2 - cur_layer.corner_points.y1, 2));
-                                    cur_layer.height = Math.sqrt(Math.pow(cur_layer.corner_points.x4 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y4 - cur_layer.corner_points.y1, 2));
                                     
                                 } else {
                                 
@@ -619,6 +602,10 @@
                                     }
                                 }
                                 
+                                /// Since there is a small amount of rounding, it is best not to recalculate the aspect ratio if the aspect ratio is supposed to be kept.
+                                if (!keep_aspect_ratio) {
+                                    cur_layer.aspect_ratio = cur_layer.width / cur_layer.height;
+                                }
                             }
                             
                             /// Figure out a way to tell the canvas to only redraw the part that changed.
