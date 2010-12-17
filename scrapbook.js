@@ -524,33 +524,13 @@
                             change_y = false;
                         
                         x1 = Math.round((neg_cosine * x1_rel - neg_sine   * y1_rel) * 100) / 100;
-                        //y1 = Math.round((neg_sine   * x1_rel + neg_cosine * y1_rel) * 100) / 100;
-                        y1 = (neg_sine   * x1_rel + neg_cosine * y1_rel);
+                        y1 = Math.round((neg_sine   * x1_rel + neg_cosine * y1_rel) * 100) / 100;
                         
                         x3 = Math.round((neg_cosine * x3_rel - neg_sine   * y3_rel) * 100) / 100;
                         y3 = Math.round((neg_sine   * x3_rel + neg_cosine * y3_rel) * 100) / 100;
                         
-                        //document.title = x1 + " > " + x3;
-                        //document.title = new_pos.x + " " + x1 + " " + (Math.round((cosine * Math.round(x1 - center_x) - sine   * Math.round(y1 - center_y)) + center_x));
-                        /*
-                        var x0 = Math.round((new_pos.x - center_x) * 100) / 100;
-                        var y0 = Math.round((new_pos.y - center_y) * 100) / 100;
-                        var rot_x0 = Math.round(((neg_cosine * x0 - neg_sine   * y0) + 0) * 100) / 100;
-                        var rot_y0 = Math.round(((neg_sine   * x0 + neg_cosine * y0) + 0) * 100) / 100;
-                        
-                        var orig_x0 = Math.round(((cosine * rot_x0 - sine   * rot_y0) + 0) * 100) / 100;
-                        var orig_y0 = Math.round(((sine   * rot_x0 + cosine * rot_y0) + 0) * 100) / 100;
-                        
-                        //document.title = "(" + x0 + ", " + y0 + ") (" + "(" + rot_x0 + ", " + rot_y0 + ") (" + "(" + orig_x0 + ", " + orig_y0 + ")";
-                        document.title = "(" + x0 + ", " + y0 + ") (" + orig_x0 + ", " + orig_y0 + ")";
-                        */
-                                 //x3: x1 * sin2 + x2 * cos2 + (y1 - y2) * sincos,
                         if (x1 > x3 && should_x1_be_less) {
-                            //x1_rel = -1;
-                            //x1 = Math.round((x3 - 1) * 100) / 100;
                             x1 = x3 - 1;
-                            //new_pos.x = new_pos.x * (neg_sine * neg_sine) + opposite_pos.x * (neg_cosine * neg_cosine) + (new_pos.y - opposite_pos.y) * (neg_sine * neg_cosine);
-                            
                             change_x = true;
                         }
                         
@@ -560,10 +540,6 @@
                         }
                         
                         if (change_x || change_y) {
-                            //new_pos.x = Math.round(((cosine * .5 - sine   * (y1)) + center_x) * 100) / 100;
-                            //new_pos.x = opposite_pos.x;
-                            //new_pos.x = Math.round(((cosine * x1_rel - sine   * y1_rel) + opposite_pos.x) * 100) / 100
-                            document.title = "Math.round(((" + cosine + " * " + x1 + " - sine * " +  y1 + ") + " + center_x + ") * 100) / 100;";
                             new_pos.x = Math.round(((cosine * x1 - sine   * y1) + center_x) * 100) / 100;
                             new_pos.y = Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100;
                         }
@@ -574,7 +550,7 @@
                         var opposite_points,
                             unrotated_x_y;
                         
-                        check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x3"), (points.y1 == "y1" || points.y1 == "y2"));
+                        check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x4"), (points.y1 == "y1" || points.y1 == "y2"));
                         
                         opposite_points = get_opposite_points(cur_layer.angle, new_pos.x, new_pos.y, cur_layer.corner_points[points.x3], cur_layer.corner_points[points.y3]);
                         
