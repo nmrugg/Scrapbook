@@ -556,22 +556,16 @@
                         
                         if (y1 > y3 && should_y1_be_less) {
                             y1 = y3 - 1;
-                            //y1_rel = -1;
                             change_y = true;
                         }
                         
-                        //document.title = x1 + " " + y1 + " | " + x3 + " " + y3;
-                        if (change_x) {
+                        if (change_x || change_y) {
                             //new_pos.x = Math.round(((cosine * .5 - sine   * (y1)) + center_x) * 100) / 100;
                             //new_pos.x = opposite_pos.x;
                             //new_pos.x = Math.round(((cosine * x1_rel - sine   * y1_rel) + opposite_pos.x) * 100) / 100
                             document.title = "Math.round(((" + cosine + " * " + x1 + " - sine * " +  y1 + ") + " + center_x + ") * 100) / 100;";
                             new_pos.x = Math.round(((cosine * x1 - sine   * y1) + center_x) * 100) / 100;
                             new_pos.y = Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100;
-                        }
-                        
-                        if (change_y) {
-                            //new_pos.y = Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100;
                         }
                     }
                     
