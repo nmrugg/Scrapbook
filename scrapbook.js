@@ -532,10 +532,16 @@
                         if (x1 > x3 && should_x1_be_less) {
                             x1 = x3 - 1;
                             change_x = true;
+                        } else if (x1 < x3 && !should_x1_be_less) {
+                            x1 = x3 + 1;
+                            change_x = true;
                         }
                         
                         if (y1 > y3 && should_y1_be_less) {
                             y1 = y3 - 1;
+                            change_y = true;
+                        } else if (y1 < y3 && !should_y1_be_less) {
+                            y1 = y3 + 1;
                             change_y = true;
                         }
                         
