@@ -555,13 +555,21 @@
                         if (keep_aspect_ratio) {
                             /// Is the width bigger?
                             if (aspect_ratio > 1) {
-                                if (should_y1_be_less) {
+                                /// UL and BR
+                                if (should_x1_be_less === should_y1_be_less) {
                                     y1 = ((x1 - x3) / aspect_ratio) + y3;
+                                /// UR and BL
+                                } else {
+                                    y1 = ((x3 - x1) / aspect_ratio) + y3;
                                 }
                                 change_y = true;
                             } else {
-                                if (should_x1_be_less) {
+                                /// UL and BR
+                                if (should_x1_be_less === should_y1_be_less) {
                                     x1 = ((y1 - y3) * aspect_ratio) + x3;
+                                /// UR and BL
+                                } else {
+                                    x1 = ((y3 - y1) * aspect_ratio) + x3;
                                 }
                                 change_x = true;
                             }
