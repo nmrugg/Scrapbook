@@ -496,7 +496,10 @@
                         }
                     }
                     
-                    function check_dimensions(angle, new_pos, opposite_pos, should_x1_be_less, should_y1_be_less)
+                    /**
+                     * Check to see if the user is trying to resize the element too far to where it would be inverted.
+                     */
+                    function check_dimensions(angle, new_pos, opposite_pos, should_x1_be_less, should_y1_be_less, keep_aspect_ratio, aspect_ratio)
                     {
                         var center_x = (new_pos.x + opposite_pos.x) / 2,
                             center_y = (new_pos.y + opposite_pos.y) / 2,
@@ -523,12 +526,15 @@
                             change_x = false,
                             change_y = false;
                         
+                        /// Unrotate the points.
                         x1 = Math.round((neg_cosine * x1_rel - neg_sine   * y1_rel) * 100) / 100;
                         y1 = Math.round((neg_sine   * x1_rel + neg_cosine * y1_rel) * 100) / 100;
                         
                         x3 = Math.round((neg_cosine * x3_rel - neg_sine   * y3_rel) * 100) / 100;
                         y3 = Math.round((neg_sine   * x3_rel + neg_cosine * y3_rel) * 100) / 100;
                         
+                        
+                        /// Check X
                         if (x1 > x3 && should_x1_be_less) {
                             x1 = x3 - 1;
                             change_x = true;
@@ -537,6 +543,7 @@
                             change_x = true;
                         }
                         
+                        /// Check Y
                         if (y1 > y3 && should_y1_be_less) {
                             y1 = y3 - 1;
                             change_y = true;
@@ -545,19 +552,36 @@
                             change_y = true;
                         }
                         
+                        if (keep_aspect_ratio) {
+                            /// Is the width bigger?
+                            if (aspect_ratio > 1) {
+                                if (should_y1_be_less) {
+                                    y1 = ((x1 - x3) / aspect_ratio) + y3;
+                                }
+                                change_y = true;
+                            } else {
+                                if (should_x1_be_less) {
+                                    x1 = ((y1 - y3) * aspect_ratio) + x3;
+                                }
+                                change_x = true;
+                            }
+                        }
+                                                
                         if (change_x || change_y) {
+                            /// Rotate new points.
                             new_pos.x = Math.round(((cosine * x1 - sine   * y1) + center_x) * 100) / 100;
                             new_pos.y = Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100;
                         }
                     }
+                    
                     
                     return function (cur_layer, keep_aspect_ratio, new_pos, points)
                     {
                         var opposite_points,
                             unrotated_x_y;
                         
-                        check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x4"), (points.y1 == "y1" || points.y1 == "y2"));
-                        
+                        check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x4"), (points.y1 == "y1" || points.y1 == "y2"), keep_aspect_ratio, cur_layer.aspect_ratio);
+                                                
                         opposite_points = get_opposite_points(cur_layer.angle, new_pos.x, new_pos.y, cur_layer.corner_points[points.x3], cur_layer.corner_points[points.y3]);
                         
                         cur_layer.corner_points[points.x1] = new_pos.x;
