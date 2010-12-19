@@ -1,3 +1,6 @@
+/*global FileReader */
+/*jslint white: true, browser: true, devel: true, forin: true, onevar: true, undef: true, nomen: true, newcap: true, immed: true */
+
 (function ()
 {
     var canvas_manager,
@@ -19,7 +22,6 @@
             cur_action,
             cur_decoration,
             
-            action_idle   = 0,
             action_move   = 1,
             action_resize = 2,
             action_rotate = 3,
@@ -37,6 +39,52 @@
         canvas_el.setAttribute("width",  canvas.width);
         canvas_el.setAttribute("height", canvas.height);
         
+        /**
+         * Rotate points of a rectangle around its center.
+         *
+         * @param angle The Angle in radians to rotate.
+         * @param x     The upper left corner x coordinate.
+         * @param y     The upper left corner y coordinate.
+         * @param w     The width of the rectangle.
+         * @param h     The height of the rectangle.
+         */
+        function rotate_rect(angle, x, y, w, h)
+        {
+            var center_x,
+                center_y,
+                x1,
+                x2,
+                y1,
+                y2,
+                
+                cosine = Math.cos(angle),
+                sine   = Math.sin(angle);
+            
+            center_x = x + (w / 2);
+            center_y = y + (h / 2);
+            
+            /// Get points relative to the center of the rectangle.
+            x1 = x - center_x;
+            y1 = y - center_y;
+            x2 = (x + w) - center_x;
+            y2 = (y + h) - center_y;
+            
+            return {
+                x1: Math.round(((cosine * x1 - sine   * y1) + center_x) * 100) / 100,
+                y1: Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100,
+                
+                x2: Math.round(((cosine * x2 - sine   * y1) + center_x) * 100) / 100,
+                y2: Math.round(((sine   * x2 + cosine * y1) + center_y) * 100) / 100,
+                
+                x3: Math.round(((cosine * x2 - sine   * y2) + center_x) * 100) / 100,
+                y3: Math.round(((sine   * x2 + cosine * y2) + center_y) * 100) / 100,
+            
+                x4: Math.round(((cosine * x1 - sine   * y2) + center_x) * 100) / 100,
+                y4: Math.round(((sine   * x1 + cosine * y2) + center_y) * 100) / 100
+            };
+        }
+
+        
         
         function draw_decoration(cur_layer)
         {
@@ -49,7 +97,7 @@
             
             context.save();
             
-            if (cur_layer.angle != 0) {
+            if (cur_layer.angle !== 0) {
                 
                 cur_layer.decoration_points = {
                     ///TODO: Figure out exactly where the points should be.
@@ -57,7 +105,7 @@
                     ur: rotate_rect(cur_layer.angle, cur_layer.corner_points.x2 - 6.5, cur_layer.corner_points.y2 - 4.5, 10, 10),
                     br: rotate_rect(cur_layer.angle, cur_layer.corner_points.x3 - 6.5, cur_layer.corner_points.y3 - 6.5, 10, 10),
                     bl: rotate_rect(cur_layer.angle, cur_layer.corner_points.x4 - 4.5, cur_layer.corner_points.y4 - 6.5, 10, 10)
-                }
+                };
             } else {
                 cur_x = cur_layer.x;
                 cur_y = cur_layer.y;
@@ -70,7 +118,7 @@
                     ur: {x1: cur_x2 - 6.5, y1: cur_y  - 4.5, x2: cur_x2 + 4.5, y2: cur_y  - 4.5, x3: cur_x2 + 4.5, y3: cur_y  + 6.5, x4: cur_x2 - 6.5, y4: cur_y  + 6.5},
                     br: {x1: cur_x2 - 6.5, y1: cur_y2 - 6.5, x2: cur_x2 + 4.5, y2: cur_y2 - 6.5, x3: cur_x2 + 4.5, y3: cur_y2 + 4.5, x4: cur_x2 - 6.5, y4: cur_y2 + 4.5},
                     bl: {x1: cur_x  - 4.5, y1: cur_y2 - 6.5, x2: cur_x  + 6.5, y2: cur_y2 - 6.5, x3: cur_x  + 6.5, y3: cur_y2 + 4.5, x4: cur_x  - 4.5, y4: cur_y2 + 4.5}
-                }
+                };
             }
             
             switch (cur_decoration) {
@@ -158,15 +206,15 @@
                 
                 x: x,
                 y: y
-            }
+            };
             
             if (type == "img") {
                 obj.img    = img;
                 obj.orig_w = img.width;
                 obj.orig_h = img.height;
                 
-                fit_into_width  = canvas.width  - (canvas.width  * .35);
-                fit_into_height = canvas.height - (canvas.height * .35);
+                fit_into_width  = canvas.width  - (canvas.width  * 0.35);
+                fit_into_height = canvas.height - (canvas.height * 0.35);
                 
                 if (obj.orig_h > fit_into_height || obj.orig_w > fit_into_width) {
                     /// Is the height the biggest problem?
@@ -204,53 +252,7 @@
             
             return obj;
         }
-        
-        
-        /**
-         * Rotate points of a rectangle around its center.
-         *
-         * @param angle The Angle in radians to rotate.
-         * @param x     The upper left corner x coordinate.
-         * @param y     The upper left corner y coordinate.
-         * @param w     The width of the rectangle.
-         * @param h     The height of the rectangle.
-         */
-        function rotate_rect(angle, x, y, w, h)
-        {
-            var center_x,
-                center_y,
-                x1,
-                x2,
-                y1,
-                y2,
                 
-                cosine = Math.cos(angle),
-                sine   = Math.sin(angle);
-            
-            center_x = x + (w / 2);
-            center_y = y + (h / 2);
-            
-            /// Get points relative to the center of the rectangle.
-            x1 = x - center_x;
-            y1 = y - center_y;
-            x2 = (x + w) - center_x;
-            y2 = (y + h) - center_y;
-            
-            return {
-                x1: Math.round(((cosine * x1 - sine   * y1) + center_x) * 100) / 100,
-                y1: Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100,
-                
-                x2: Math.round(((cosine * x2 - sine   * y1) + center_x) * 100) / 100,
-                y2: Math.round(((sine   * x2 + cosine * y1) + center_y) * 100) / 100,
-                
-                x3: Math.round(((cosine * x2 - sine   * y2) + center_x) * 100) / 100,
-                y3: Math.round(((sine   * x2 + cosine * y2) + center_y) * 100) / 100,
-            
-                x4: Math.round(((cosine * x1 - sine   * y2) + center_x) * 100) / 100,
-                y4: Math.round(((sine   * x1 + cosine * y2) + center_y) * 100) / 100
-            }
-        }
-        
         
         function rotate(cur_layer, angle)
         {            
@@ -378,8 +380,7 @@
                         cur_layer,
                         cur_x = cur_pos.x,
                         cur_y = cur_pos.y,
-                        i,
-                        layer_count;
+                        i;
                     
                     
                     /// First, check to see if the cursor is hovering over a decoration.
@@ -493,7 +494,7 @@
                         return {
                             x: Math.round(((neg_cosine * x - neg_sine   * y) + center_x) * 100) / 100,
                             y: Math.round(((neg_sine   * x + neg_cosine * y) + center_y) * 100) / 100
-                        }
+                        };
                     }
                     
                     /**
@@ -613,7 +614,8 @@
                 
                 return function (e)
                 {
-                    var cur_pos = get_relative_x_y(e),
+                    var cur_layer,
+                        cur_pos = get_relative_x_y(e),
                         cur_x,
                         cur_y,
                         tmp_layer,
@@ -781,18 +783,21 @@
                     
                     which_decoration = tmp_layer;
                     
-                } else if (tmp_layer >= 0) {
+                } else {
+                    ///NOTE: If no layer was selected, tmp_layer will be -1.
                     selected_layer = tmp_layer;
                     
-                    cur_action = action_move;
-                    
-                    canvas_el.style.cursor = "move";
-                    
-                    mouse_starting_x = cur_pos.x;
-                    mouse_starting_y = cur_pos.y;
-                    
-                    layer_starting_x = layers[selected_layer].x;
-                    layer_starting_y = layers[selected_layer].y;
+                    if (tmp_layer >= 0) {
+                        cur_action = action_move;
+                        
+                        canvas_el.style.cursor = "move";
+                        
+                        mouse_starting_x = cur_pos.x;
+                        mouse_starting_y = cur_pos.y;
+                        
+                        layer_starting_x = layers[selected_layer].x;
+                        layer_starting_y = layers[selected_layer].y;
+                    }
                 }
                 
                 if (last_layer != selected_layer) {
@@ -800,6 +805,25 @@
                     
                     /// Last layer is no longer needed since it finished redrawing the parts that changed.
                     last_layer = -1;
+                }
+            };
+            
+            canvas_el.ondblclick = function (e)
+            {
+                /// Since onmousedown already fired, the layer is selected already.
+                if (selected_layer >= 0) {
+                    switch (cur_decoration) {
+                    case decoration_resize:
+                        cur_decoration = decoration_rotate;
+                        break;
+                    case decoration_rotate:
+                        cur_decoration = decoration_crop;
+                        break;
+                    case decoration_crop:
+                        cur_decoration = decoration_resize;
+                        break;
+                    }
+                    redraw();
                 }
             };
             
