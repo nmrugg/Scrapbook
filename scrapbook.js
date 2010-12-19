@@ -398,7 +398,8 @@
                 return function (cur_pos)
                 {
                     var corners,
-                        cur_layer,
+                        cur_layer_corner,
+                        cur_layer_dec,
                         cur_x = cur_pos.x,
                         cur_y = cur_pos.y,
                         i;
@@ -406,26 +407,27 @@
                     
                     /// First, check to see if the cursor is hovering over a decoration.
                     if (selected_layer >= 0) {
-                        cur_layer = layers[selected_layer];
+                        
                         ///NOTE: Move and Crop decorations are both squares.
                         if (cur_decoration != decoration_rotate) {
-                            for (corners in cur_layer.decoration_points) {
+                            cur_layer_dec = layers[selected_layer].decoration_points;
+                            for (corners in cur_layer_dec) {
                                 if (is_inside_shape(cur_x, cur_y, [
                                     {
-                                        x: cur_layer.decoration_points[corners].x1,
-                                        y: cur_layer.decoration_points[corners].y1
+                                        x: cur_layer_dec[corners].x1,
+                                        y: cur_layer_dec[corners].y1
                                     },
                                     {
-                                        x: cur_layer.decoration_points[corners].x2,
-                                        y: cur_layer.decoration_points[corners].y2
+                                        x: cur_layer_dec[corners].x2,
+                                        y: cur_layer_dec[corners].y2
                                     },
                                     {
-                                        x: cur_layer.decoration_points[corners].x3,
-                                        y: cur_layer.decoration_points[corners].y3
+                                        x: cur_layer_dec[corners].x3,
+                                        y: cur_layer_dec[corners].y3
                                     },
                                     {
-                                        x: cur_layer.decoration_points[corners].x4,
-                                        y: cur_layer.decoration_points[corners].y4
+                                        x: cur_layer_dec[corners].x4,
+                                        y: cur_layer_dec[corners].y4
                                     }
                                 ])) {
                                     return corners;
@@ -433,7 +435,16 @@
                             }
                         /// If the decoration is a rotation circle
                         } else {
-                            
+                            cur_layer_corner = layers[selected_layer].corner_points;
+                            if (Math.sqrt(Math.pow(cur_layer_corner.x1 - cur_x, 2) + Math.pow(cur_layer_corner.y1 - cur_y, 2)) <= 5) {
+                                return "ul";
+                            } else if (Math.sqrt(Math.pow(cur_layer_corner.x2 - cur_x, 2) + Math.pow(cur_layer_corner.y2 - cur_y, 2)) <= 5) {
+                                return "ur";
+                            } else if (Math.sqrt(Math.pow(cur_layer_corner.x3 - cur_x, 2) + Math.pow(cur_layer_corner.y3 - cur_y, 2)) <= 5) {
+                                return "br";
+                            } else if (Math.sqrt(Math.pow(cur_layer_corner.x4 - cur_x, 2) + Math.pow(cur_layer_corner.y4 - cur_y, 2)) <= 5) {
+                                return "bl";
+                            }
                         }
                     }
                     
@@ -746,6 +757,7 @@
                                 }
                             } else {
                                 ///TODO: Make a rotate cursor image.
+                                canvas_el.style.cursor = "crosshair";
                             }
                             
                         /// Is the cursor hovering over something different than before?
