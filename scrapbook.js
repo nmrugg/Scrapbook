@@ -277,7 +277,7 @@
         
         function rotate(cur_layer, angle)
         {            
-            angle *= Math.PI / 180;
+            //angle *= Math.PI / 180;
             
             cur_layer.angle = angle;
             
@@ -305,7 +305,7 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                rotate(layers[layers.length - 1], 10);
+                rotate(layers[layers.length - 1], 10 * (Math.PI / 180));
                 
                 redraw();
             };
@@ -341,6 +341,8 @@
                 layer_starting_y,
                 mouse_starting_x,
                 mouse_starting_y,
+                
+                layer_starting_angle,
                 
                 which_decoration,
                 
@@ -644,6 +646,34 @@
                     };
                 }());
                 
+                
+                function calculate_angle(orig_angle, p_start, p_new, p_center)
+                {
+                    var a,
+                        b,
+                        c,
+                        
+                        angle;
+                    
+                    /// Calculate lengths: sqrt((x1-x2)^2 + (y1-y2)^2)
+                    a = Math.sqrt(Math.pow(p_start.x - p_center.x, 2) + Math.pow(p_start.y - p_center.y, 2));
+                    b = Math.sqrt(Math.pow(p_start.x - p_new.x,    2) + Math.pow(p_start.y - p_new.y,    2));
+                    c = Math.sqrt(Math.pow(p_new.x   - p_center.x, 2) + Math.pow(p_new.y   - p_center.y, 2));
+                    
+                    if (a === 0 || b === 0 || c === 0) {
+                        return orig_angle;
+                    }
+                    
+                    /// Calculate change in angle using the cosine law.
+                    angle = Math.round(Math.acos((Math.pow(a, 2) + Math.pow(c, 2) - Math.pow(b, 2)) / (2 * a * c)) * 10000) / 10000;
+                    
+                    /// Need to figure out if rotating clockwise or counter.
+                    /// We can figure this out by calculating the area of the triangle formed by these three points and seeing if it is positive (clockwise) or negative (counter clockwise).
+                    angle *= ((p_start.x * p_new.y - p_start.y * p_new.x - p_center.x * p_new.y + p_center.y * p_new.x + p_center.x * p_start.y - p_center.y * p_start.x) > 0) ? 1 : -1;
+                    
+                    return orig_angle + angle;
+                }
+                
                 return function (e)
                 {
                     var cur_layer,
@@ -732,6 +762,8 @@
                                 if (!keep_aspect_ratio) {
                                     cur_layer.aspect_ratio = cur_layer.width / cur_layer.height;
                                 }
+                            } else if (cur_action === action_rotate) {
+                                rotate(cur_layer, calculate_angle(layer_starting_angle, {x: mouse_starting_x, y: mouse_starting_y}, {x: cur_x, y: cur_y}, {x: (cur_layer.corner_points.x1 + cur_layer.corner_points.x3) / 2, y: (cur_layer.corner_points.y1 + cur_layer.corner_points.y3) / 2}));
                             }
                             
                             /// Figure out a way to tell the canvas to only redraw the part that changed.
@@ -778,7 +810,8 @@
             
             canvas_el.onmousedown = function (e)
             {
-                var cur_pos = get_relative_x_y(e),
+                var cur_layer,
+                    cur_pos = get_relative_x_y(e),
                     tmp_layer;
                 
                 button_state = e.button;
@@ -809,6 +842,7 @@
                         }
                     } else {
                         /// Make a rotate cursor image.
+                        layer_starting_angle = layers[selected_layer].angle
                     }
                     
                     mouse_starting_x = cur_pos.x;
@@ -821,6 +855,8 @@
                     selected_layer = tmp_layer;
                     
                     if (tmp_layer >= 0) {
+                        cur_layer = layers[selected_layer];
+                        
                         cur_action = action_move;
                         
                         canvas_el.style.cursor = "move";
@@ -828,8 +864,8 @@
                         mouse_starting_x = cur_pos.x;
                         mouse_starting_y = cur_pos.y;
                         
-                        layer_starting_x = layers[selected_layer].x;
-                        layer_starting_y = layers[selected_layer].y;
+                        layer_starting_x = cur_layer.x;
+                        layer_starting_y = cur_layer.y;
                     }
                 }
                 
