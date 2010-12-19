@@ -477,7 +477,7 @@
             {
                 var resize_layer = (function ()
                 {
-                    function get_opposite_points(angle, x1, y1, x2, y2)
+                    function get_opposite_points(angle, x1, y1, x3, y3)
                     {
                         var cosine = Math.cos(-angle),
                             cos2,
@@ -490,11 +490,11 @@
                         sincos = sine * cosine;
                         
                         return {
-                            x3: x1 * sin2 + x2 * cos2 + (y1 - y2) * sincos,
-                            y3: y2 * sin2 + y1 * cos2 + (x1 - x2) * sincos,
+                            x2: x1 * sin2 + x3 * cos2 + (y1 - y3) * sincos,
+                            y2: y3 * sin2 + y1 * cos2 + (x1 - x3) * sincos,
                             
-                            x4: x2 * sin2 + x1 * cos2 + (y2 - y1) * sincos,
-                            y4: y1 * sin2 + y2 * cos2 + (x2 - x1) * sincos
+                            x4: x3 * sin2 + x1 * cos2 + (y3 - y1) * sincos,
+                            y4: y1 * sin2 + y3 * cos2 + (x3 - x1) * sincos
                         };
                     }
                     
@@ -519,7 +519,7 @@
                     }
                     
                     /**
-                     * Check to see if the user is trying to resize the element too far to where it would be inverted.
+                     * Check to see if the user is trying to resize the element too far to where it would be inverted and optionally check the aspect ratio.
                      */
                     function check_dimensions(angle, new_pos, opposite_pos, should_x1_be_less, should_y1_be_less, keep_aspect_ratio, aspect_ratio)
                     {
@@ -617,8 +617,8 @@
                         cur_layer.corner_points[points.x1] = new_pos.x;
                         cur_layer.corner_points[points.y1] = new_pos.y;
                         
-                        cur_layer.corner_points[points.x2] = opposite_points.x3;
-                        cur_layer.corner_points[points.y2] = opposite_points.y3;
+                        cur_layer.corner_points[points.x2] = opposite_points.x2;
+                        cur_layer.corner_points[points.y2] = opposite_points.y2;
                         
                         cur_layer.corner_points[points.x4] = opposite_points.x4;
                         cur_layer.corner_points[points.y4] = opposite_points.y4;
