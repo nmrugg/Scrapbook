@@ -9,9 +9,9 @@
     canvas_manager = (function (canvas_el)
     {
         var canvas = {
-            height: 600,
-            width:  800
-        },
+                height: 600,
+                width:  800
+            },
             context = canvas_el.getContext("2d"),
             layers = [],
             
@@ -29,7 +29,10 @@
             
             decoration_resize = 1,
             decoration_rotate = 2,
-            decoration_crop   = 3;
+            decoration_crop   = 3,
+            
+            /// Misc
+            PI2 = Math.PI * 2;
         
         cur_decoration = decoration_resize;
         
@@ -85,7 +88,6 @@
         }
 
         
-        
         function draw_decoration(cur_layer)
         {
             var corners,
@@ -97,28 +99,30 @@
             
             context.save();
             
-            if (cur_layer.angle !== 0) {
-                
-                cur_layer.decoration_points = {
-                    ///TODO: Figure out exactly where the points should be.
-                    ul: rotate_rect(cur_layer.angle, cur_layer.corner_points.x1 - 4.5, cur_layer.corner_points.y1 - 4.5, 10, 10),
-                    ur: rotate_rect(cur_layer.angle, cur_layer.corner_points.x2 - 6.5, cur_layer.corner_points.y2 - 4.5, 10, 10),
-                    br: rotate_rect(cur_layer.angle, cur_layer.corner_points.x3 - 6.5, cur_layer.corner_points.y3 - 6.5, 10, 10),
-                    bl: rotate_rect(cur_layer.angle, cur_layer.corner_points.x4 - 4.5, cur_layer.corner_points.y4 - 6.5, 10, 10)
-                };
-            } else {
-                cur_x = cur_layer.x;
-                cur_y = cur_layer.y;
-                
-                cur_x2 = cur_x + cur_layer.width;
-                cur_y2 = cur_y + cur_layer.height;
-                
-                cur_layer.decoration_points = {
-                    ul: {x1: cur_x  - 4.5, y1: cur_y  - 4.5, x2: cur_x  + 6.5, y2: cur_y  - 4.5, x3: cur_x  + 6.5, y3: cur_y  + 6.5, x4: cur_x  - 4.5, y4: cur_y  + 6.5},
-                    ur: {x1: cur_x2 - 6.5, y1: cur_y  - 4.5, x2: cur_x2 + 4.5, y2: cur_y  - 4.5, x3: cur_x2 + 4.5, y3: cur_y  + 6.5, x4: cur_x2 - 6.5, y4: cur_y  + 6.5},
-                    br: {x1: cur_x2 - 6.5, y1: cur_y2 - 6.5, x2: cur_x2 + 4.5, y2: cur_y2 - 6.5, x3: cur_x2 + 4.5, y3: cur_y2 + 4.5, x4: cur_x2 - 6.5, y4: cur_y2 + 4.5},
-                    bl: {x1: cur_x  - 4.5, y1: cur_y2 - 6.5, x2: cur_x  + 6.5, y2: cur_y2 - 6.5, x3: cur_x  + 6.5, y3: cur_y2 + 4.5, x4: cur_x  - 4.5, y4: cur_y2 + 4.5}
-                };
+            if (cur_decoration != decoration_rotate) {
+                if (cur_layer.angle !== 0) {
+                    
+                    cur_layer.decoration_points = {
+                        ///TODO: Figure out exactly where the points should be.
+                        ul: rotate_rect(cur_layer.angle, cur_layer.corner_points.x1 - 4.5, cur_layer.corner_points.y1 - 4.5, 10, 10),
+                        ur: rotate_rect(cur_layer.angle, cur_layer.corner_points.x2 - 6.5, cur_layer.corner_points.y2 - 4.5, 10, 10),
+                        br: rotate_rect(cur_layer.angle, cur_layer.corner_points.x3 - 6.5, cur_layer.corner_points.y3 - 6.5, 10, 10),
+                        bl: rotate_rect(cur_layer.angle, cur_layer.corner_points.x4 - 4.5, cur_layer.corner_points.y4 - 6.5, 10, 10)
+                    };
+                } else {
+                    cur_x = cur_layer.x;
+                    cur_y = cur_layer.y;
+                    
+                    cur_x2 = cur_x + cur_layer.width;
+                    cur_y2 = cur_y + cur_layer.height;
+                    
+                    cur_layer.decoration_points = {
+                        ul: {x1: cur_x  - 4.5, y1: cur_y  - 4.5, x2: cur_x  + 6.5, y2: cur_y  - 4.5, x3: cur_x  + 6.5, y3: cur_y  + 6.5, x4: cur_x  - 4.5, y4: cur_y  + 6.5},
+                        ur: {x1: cur_x2 - 6.5, y1: cur_y  - 4.5, x2: cur_x2 + 4.5, y2: cur_y  - 4.5, x3: cur_x2 + 4.5, y3: cur_y  + 6.5, x4: cur_x2 - 6.5, y4: cur_y  + 6.5},
+                        br: {x1: cur_x2 - 6.5, y1: cur_y2 - 6.5, x2: cur_x2 + 4.5, y2: cur_y2 - 6.5, x3: cur_x2 + 4.5, y3: cur_y2 + 4.5, x4: cur_x2 - 6.5, y4: cur_y2 + 4.5},
+                        bl: {x1: cur_x  - 4.5, y1: cur_y2 - 6.5, x2: cur_x  + 6.5, y2: cur_y2 - 6.5, x3: cur_x  + 6.5, y3: cur_y2 + 4.5, x4: cur_x  - 4.5, y4: cur_y2 + 4.5}
+                    };
+                }
             }
             
             switch (cur_decoration) {
@@ -137,6 +141,23 @@
                 
                 break;
             case decoration_rotate:
+                context.strokeStyle = "rgba(0,0,255,.5)";
+                
+                context.arc(cur_layer.corner_points.x1, cur_layer.corner_points.y1, 5, 0, PI2, true);
+                context.stroke();
+                
+                ///NOTE: beginPath() is needed to "pick up the pen" in between circles.
+                context.beginPath();
+                context.arc(cur_layer.corner_points.x2, cur_layer.corner_points.y2, 5, 0, PI2, true);
+                context.stroke();
+                
+                context.beginPath();
+                context.arc(cur_layer.corner_points.x3, cur_layer.corner_points.y3, 5, 0, PI2, true);
+                context.stroke();
+                
+                context.beginPath();
+                context.arc(cur_layer.corner_points.x4, cur_layer.corner_points.y4, 5, 0, PI2, true);
+                context.stroke();
                 break;
             case decoration_crop:
                 break;
