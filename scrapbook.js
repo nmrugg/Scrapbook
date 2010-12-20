@@ -32,7 +32,8 @@
             decoration_crop   = 3,
             
             /// Misc
-            PI2 = Math.PI * 2;
+            PI  = Math.PI,
+            PI2 = PI * 2;
         
         cur_decoration = decoration_resize;
         
@@ -277,13 +278,9 @@
         
         function rotate(cur_layer, angle)
         {            
-            //angle *= Math.PI / 180;
-            
             cur_layer.angle = angle;
             
-            if (angle !== 0) {
-                cur_layer.corner_points = rotate_rect(angle, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
-            }
+            cur_layer.corner_points = rotate_rect(angle, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
         }
         
         function add_image(dataURI, x, y)
@@ -305,7 +302,7 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                rotate(layers[layers.length - 1], 10 * (Math.PI / 180));
+                rotate(layers[layers.length - 1], 10 * (PI / 180));
                 
                 redraw();
             };
@@ -647,7 +644,7 @@
                 }());
                 
                 
-                function calculate_angle(orig_angle, p_start, p_new, p_center)
+                function calculate_angle(orig_angle, p_start, p_new, p_center, snap)
                 {
                     var a,
                         b,
@@ -669,9 +666,38 @@
                     
                     /// Need to figure out if rotating clockwise or counter.
                     /// We can figure this out by calculating the area of the triangle formed by these three points and seeing if it is positive (clockwise) or negative (counter clockwise).
-                    angle *= ((p_start.x * p_new.y - p_start.y * p_new.x - p_center.x * p_new.y + p_center.y * p_new.x + p_center.x * p_start.y - p_center.y * p_start.x) > 0) ? 1 : -1;
+                    ///NOTE: Adds in orig_angle too.
+                    angle = (((p_start.x * p_new.y - p_start.y * p_new.x - p_center.x * p_new.y + p_center.y * p_new.x + p_center.x * p_start.y - p_center.y * p_start.x) > 0) ? angle : -angle) + orig_angle;
                     
-                    return orig_angle + angle;
+                    
+                    if (angle > PI) {
+                        angle = (angle % PI) - PI;
+                    } else if (angle < -PI) {
+                        angle = (angle % PI) + PI;
+                    }
+                    
+                    if (snap) {
+                        if (angle > -0.3927 && angle < 0.3927) {
+                            angle = 0;         /// 0°
+                        } else if (angle >= .3927 && angle < 1.178) {
+                            angle = 0.785398;  /// 45°
+                        } else if (angle >= 1.178 && angle < 1.9634) {
+                            angle = 1.570796;  /// 90°
+                        } else if (angle >= 1.9634 && angle < 2.7488) {
+                            angle = 2.356194;  /// 135°
+                        } else if ((angle >= 2.7488 && angle < 3.5342) || (angle <= -2.7488 && angle > -3.5342)) {
+                            ///NOTE: 180° == -180°
+                            angle = PI;        /// 180°
+                        } else if (angle <= -.3927 && angle > -1.178) {
+                            angle = -0.785398; /// -45°
+                        } else if (angle <= -1.178 && angle > -1.9634) {
+                            angle = -1.570796; /// -90°
+                        } else if (angle <= -1.9634 && angle > -2.7488) {
+                            angle = -2.356194; /// -135°
+                        }
+                    }
+                    
+                    return angle;
                 }
                 
                 return function (e)
@@ -687,7 +713,8 @@
                         new_width,
                         new_height,
                         
-                        keep_aspect_ratio = !e.shiftKey;
+                        keep_aspect_ratio,
+                        shift_down = e.shiftKey;
                     
                     cur_x = cur_pos.x;
                     cur_y = cur_pos.y;
@@ -717,7 +744,7 @@
                                 cur_layer.corner_points.x4 -= x_move_amt;
                                 cur_layer.corner_points.y4 -= y_move_amt;
                             } else if (cur_action === action_resize) {
-                                
+                                keep_aspect_ratio = !shift_down;
                                 if (cur_layer.angle !== 0) {
                                     if (which_decoration == "ul") {
                                         resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x1", y1: "y1", x2: "x2", y2: "y2", x3: "x3", y3: "y3", x4: "x4", y4: "y4"});
@@ -763,7 +790,7 @@
                                     cur_layer.aspect_ratio = cur_layer.width / cur_layer.height;
                                 }
                             } else if (cur_action === action_rotate) {
-                                rotate(cur_layer, calculate_angle(layer_starting_angle, {x: mouse_starting_x, y: mouse_starting_y}, {x: cur_x, y: cur_y}, {x: (cur_layer.corner_points.x1 + cur_layer.corner_points.x3) / 2, y: (cur_layer.corner_points.y1 + cur_layer.corner_points.y3) / 2}));
+                                rotate(cur_layer, calculate_angle(layer_starting_angle, {x: mouse_starting_x, y: mouse_starting_y}, {x: cur_x, y: cur_y}, {x: (cur_layer.corner_points.x1 + cur_layer.corner_points.x3) / 2, y: (cur_layer.corner_points.y1 + cur_layer.corner_points.y3) / 2}, shift_down));
                             }
                             
                             /// Figure out a way to tell the canvas to only redraw the part that changed.
