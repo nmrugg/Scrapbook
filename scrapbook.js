@@ -927,13 +927,43 @@
                 
                 document.body.insertBefore(menu_el, null);
                 
+                function add_menu_item(text, click_func)
+                {
+                    var el;
+                    
+                    el = document.createElement("div");
+                    el.innerHTML = text;
+                    el.onclick = click_func;
+                    menu_el.insertBefore(el, null);
+                }
+                
                 return {
                     display_menu: function (pos, layer)
                     {
-                        clearTimeout(hide_menu_timeout);
-                        menu_el.style.cssText = "display: block; position: absolute; left: " + (pos.x + canvas_el.offsetLeft) + "px; top: " + (pos.y + canvas_el.offsetTop) + "px;";
-                        menu_el.innerHTML     = "menu";
+                        var cur_layer = layers[layer];
                         
+                        /// Clear old menu.
+                        menu_el.innerHTML = "";
+                        
+                        clearTimeout(hide_menu_timeout);
+                        
+                        if (layer > 0) {
+                            add_menu_item("Send Backward", function () {});
+                            
+                            add_menu_item("Send to Back", function () {});
+                        }
+                        
+                        if (layer < layers.length - 1) {
+                            add_menu_item("Bring Forward", function () {});
+                            
+                            add_menu_item("Brint to Front", function () {});
+                        }
+                        
+                        if (cur_layer.aspect_ratio != cur_layer.orig_aspect_ratio) {
+                            add_menu_item("Reset Aspect Ratio", function () {});
+                        }
+                        
+                        menu_el.style.cssText = "display: block; position: absolute; left: " + (pos.x + canvas_el.offsetLeft) + "px; top: " + (pos.y + canvas_el.offsetTop) + "px;";
                     },
                     hide_menu: function ()
                     {
