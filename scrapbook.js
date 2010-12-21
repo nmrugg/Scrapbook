@@ -302,8 +302,6 @@
                 
                 layers[layers.length] = create_new_layer("img", img, x, y);
                 
-                rotate(layers[layers.length - 1], 10 * (PI / 180));
-                
                 redraw();
             };
             img.src = dataURI;
@@ -482,6 +480,36 @@
                     return i;
                 };
             }());
+            
+            
+            function set_decoration_cursor(cur_layer, which_decoration)
+            {
+                var decoration_angle,
+                    radian_45  = PI / 4,
+                    radian_90  = PI / 2,
+                    radian_135 = radian_45 + radian_90,
+                    radian_180 = PI;
+                
+                decoration_angle = layers[selected_layer].angle + ((which_decoration == "ul") ? radian_45 : (which_decoration == "ur") ? radian_135 : (which_decoration == "br") ? -radian_135 : -radian_45);
+                
+                /// Prevent the angle from increasing/decreasing without end.
+                if (decoration_angle > PI) {
+                    decoration_angle = (decoration_angle % PI) - PI;
+                } else if (decoration_angle < -PI) {
+                    decoration_angle = (decoration_angle % PI) + PI;
+                }
+                
+                ///NOTE: Could also use nesw-resize or nwse-resize cursors instead, but they may be less supported.
+                if (decoration_angle >= 0 && decoration_angle < radian_90) {
+                    canvas_el.style.cursor = "nw-resize";
+                } else if (decoration_angle >= radian_90) {
+                    canvas_el.style.cursor = "ne-resize";
+                } else if (decoration_angle <= -radian_90) {
+                    canvas_el.style.cursor = "se-resize";
+                } else if (decoration_angle < 0 && decoration_angle > -radian_90) {
+                    canvas_el.style.cursor = "sw-resize";
+                }
+            }
             
             canvas_el.onmousemove = (function ()
             {
@@ -669,7 +697,7 @@
                     ///NOTE: Adds in orig_angle too.
                     angle = (((p_start.x * p_new.y - p_start.y * p_new.x - p_center.x * p_new.y + p_center.y * p_new.x + p_center.x * p_start.y - p_center.y * p_start.x) > 0) ? angle : -angle) + orig_angle;
                     
-                    
+                    /// Prevent the angle from increasing/decreasing without end.
                     if (angle > PI) {
                         angle = (angle % PI) - PI;
                     } else if (angle < -PI) {
@@ -776,16 +804,7 @@
                             hover_layer = tmp_layer;
                             /// Resize and Crop can use the same cursor
                             if (cur_decoration != decoration_rotate) {
-                                ///NOTE: Could also use nesw-resize or nwse-resize cursors instead, but they may be less supported.
-                                if (tmp_layer == "ul") {
-                                    canvas_el.style.cursor = "nw-resize";
-                                } else if (tmp_layer == "ur") {
-                                    canvas_el.style.cursor = "ne-resize";
-                                } else if (tmp_layer == "bl") {
-                                    canvas_el.style.cursor = "sw-resize";
-                                } else if (tmp_layer == "br") {
-                                    canvas_el.style.cursor = "se-resize";
-                                }
+                                set_decoration_cursor(layers[selected_layer], tmp_layer);
                             } else {
                                 ///TODO: Make a rotate cursor image.
                                 canvas_el.style.cursor = "crosshair";
@@ -830,15 +849,7 @@
                     }
                     
                     if (cur_decoration != decoration_rotate) {
-                        if (tmp_layer == "ul") {
-                            canvas_el.style.cursor = "nw-resize";
-                        } else if (tmp_layer == "ur") {
-                            canvas_el.style.cursor = "ne-resize";
-                        } else if (tmp_layer == "bl") {
-                            canvas_el.style.cursor = "sw-resize";
-                        } else if (tmp_layer == "br") {
-                            canvas_el.style.cursor = "se-resize";
-                        }
+                        set_decoration_cursor(layers[selected_layer], tmp_layer);
                     } else {
                         /// Make a rotate cursor image.
                         layer_starting_angle = layers[selected_layer].angle
@@ -885,7 +896,9 @@
                         cur_decoration = decoration_rotate;
                         break;
                     case decoration_rotate:
-                        cur_decoration = decoration_crop;
+                        ///FIXME: Temporarily skipping crop until I have the time to write it.
+                        //cur_decoration = decoration_crop;
+                        cur_decoration = decoration_resize;
                         break;
                     case decoration_crop:
                         cur_decoration = decoration_resize;
