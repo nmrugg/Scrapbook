@@ -140,12 +140,12 @@
                     context.lineTo(cur_layer.decoration_points[corners].x1, cur_layer.decoration_points[corners].y1);
                 }
                 
-                context.strokeStyle = "rgba(0,0,0,.5)";
+                context.strokeStyle = "rgba(0, 0, 0, .5)";
                 context.stroke();
                 
                 break;
             case decoration_rotate:
-                context.strokeStyle = "rgba(0,0,255,.5)";
+                context.strokeStyle = "rgba(0, 0, 255, .5)";
                 
                 context.arc(cur_layer.corner_points.x1, cur_layer.corner_points.y1, 5, 0, PI2, true);
                 context.stroke();
@@ -170,11 +170,55 @@
             context.restore();
         }
         
+        function create_smaller_img(cur_layer)
+        {
+            /// Prevent the smaller image from being created too many times.
+            if (cur_layer.getting_smaller_img) {
+                return;
+            }
+            
+            cur_layer.getting_smaller_img = true;
+            
+            ///TODO: It would be good if there was a way to clear the timeout when the image is resized.
+            window.setTimeout(function ()
+            {
+                var little_canvas = document.createElement("canvas"),
+                    little_context,
+                    little_img    = new Image();
+                    
+                little_context = little_canvas.getContext("2d");
+                
+                little_canvas.setAttribute("width",  cur_layer.width);
+                little_canvas.setAttribute("height", cur_layer.height);
+                
+                ///TODO: Since this can be very resource intensive, it would be nice if this could be done in a worker.
+                ///TODO: Could also crop it.
+                little_context.drawImage(cur_layer.img, 0, 0, cur_layer.width, cur_layer.height);
+                
+                little_img.onload = function ()
+                {
+                    cur_layer.img_small = little_img;
+                    
+                    cur_layer.smaller_w = cur_layer.width;
+                    cur_layer.smaller_h = cur_layer.height;
+                    
+                    cur_layer.getting_smaller_img = null;
+                    
+                    /// Make sure the canvas is out of the memory.
+                    little_canvas = null;
+                };
+                
+                little_img.src = little_canvas.toDataURL("image/png");
+            }, 2000)
+               
+        }
+        
         function redraw()
         {
             ///TODO: redraw() should take dimension or a layer as a parameter and only redraw that part.
             
-            var cur_layer,
+            var cur_img,
+                cur_layer,
                 i = 0,
                 layer_count = layers.length;
             
@@ -186,6 +230,24 @@
             while (i < layer_count) {
                 /// If visible
                 cur_layer = layers[i];
+                
+                /// Is there a smaller version and is it not too small?
+                if (cur_layer.img_small && cur_layer.width <= cur_layer.smaller_w && cur_layer.height <= cur_layer.smaller_h) {
+                    cur_img = cur_layer.img_small;
+                    
+                    /// Should there be an even smaller image?
+                    if (cur_layer.width < (cur_layer.smaller_w - 25) && cur_layer.height < (cur_layer.smaller_h - 25)) {
+                        create_smaller_img(cur_layer);
+                    }
+                } else {
+                    cur_img = cur_layer.img;
+                    
+                    /// Should there be a smaller image?
+                    if (cur_layer.width < (cur_layer.orig_w - 25) && cur_layer.height < (cur_layer.orig_h - 25)) {
+                        create_smaller_img(cur_layer);
+                    }
+                }
+                
                 context.save();
                 
                 context.globalAlpha              = cur_layer.opacity;
@@ -196,10 +258,10 @@
                     context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
                     context.rotate(cur_layer.angle);
                     /// If an image
-                    context.drawImage(cur_layer.img, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width, cur_layer.height);
+                    context.drawImage(cur_img, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width, cur_layer.height);
                 } else {
                     /// If an image
-                    context.drawImage(cur_layer.img, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
+                    context.drawImage(cur_img, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
                 }
                 
                 context.restore();
