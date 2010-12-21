@@ -31,6 +31,9 @@
             decoration_rotate = 2,
             decoration_crop   = 3,
             
+            /// Functions
+            menu_manager,
+            
             /// Misc
             PI  = Math.PI,
             PI2 = PI * 2;
@@ -914,6 +917,47 @@
                 button_down  = false;
             };
             
+            
+            menu_manager = (function ()
+            {
+                var hide_menu_timeout,
+                    menu_el = document.createElement("menu");
+                
+                menu_el.style.display = "none";
+                
+                document.body.insertBefore(menu_el, null);
+                
+                return {
+                    display_menu: function (pos, layer)
+                    {
+                        clearTimeout(hide_menu_timeout);
+                        menu_el.style.cssText = "display: block; position: absolute; left: " + (pos.x + canvas_el.offsetLeft) + "px; top: " + (pos.y + canvas_el.offsetTop) + "px;";
+                        menu_el.innerHTML     = "menu";
+                        
+                    },
+                    hide_menu: function ()
+                    {
+                        hide_menu_timeout = window.setTimeout(function ()
+                        {
+                            menu_el.style.display = "none";
+                        }, 100);
+                    }
+                };
+            }());
+            
+            canvas_el.addEventListener("contextmenu", function (e)
+            {
+                /// Prevent menu from displaying.
+                e.stopPropagation();
+                e.preventDefault();
+                
+                if (selected_layer >= 0) {
+                    menu_manager.display_menu(get_relative_x_y(e), selected_layer);
+                }
+                
+                return false;
+            }, true);
+            
             /// Allow the cursor to leave the canvas and still affect the layer.
             document.onmousemove = function (e)
             {
@@ -925,6 +969,12 @@
             {
                 canvas_el.onmouseup(e);
             };
+            
+            document.onmousedown = function (e)
+            {
+                /// This will hide the context menu even if the user clickec off of the canvas.
+                menu_manager.hide_menu();
+            }
         }());
         
         return {
