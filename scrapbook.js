@@ -745,44 +745,16 @@
                                 cur_layer.corner_points.y4 -= y_move_amt;
                             } else if (cur_action === action_resize) {
                                 keep_aspect_ratio = !shift_down;
-                                if (cur_layer.angle !== 0) {
-                                    if (which_decoration == "ul") {
-                                        resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x1", y1: "y1", x2: "x2", y2: "y2", x3: "x3", y3: "y3", x4: "x4", y4: "y4"});
-                                    } else if (which_decoration == "ur") {
-                                        resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x2", y1: "y2", x2: "x1", y2: "y1", x3: "x4", y3: "y4", x4: "x3", y4: "y3"});
-                                    } else if (which_decoration == "br") {
-                                        resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x3", y1: "y3", x2: "x4", y2: "y4", x3: "x1", y3: "y1", x4: "x2", y4: "y2"});
-                                    } else if (which_decoration == "bl") {
-                                        resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x4", y1: "y4", x2: "x3", y2: "y3", x3: "x2", y3: "y2", x4: "x1", y4: "y1"});
-                                    }
-                                    
-                                } else {
                                 
-                                    x_move_amt = mouse_starting_x - cur_x;
-                                    y_move_amt = mouse_starting_y - cur_y;
-                                    
-                                    if (which_decoration == "ul") {
-                                        new_width  = cur_layer.width  + x_move_amt;
-                                        new_height = cur_layer.height + y_move_amt;
-                                        
-                                        if (new_width <= 0) {
-                                            cur_layer.x = cur_layer.x + cur_layer.width - 1;
-                                            cur_layer.width = 1;
-                                        } else {
-                                            cur_layer.width = new_width;
-                                            cur_layer.x -= x_move_amt;
-                                            mouse_starting_x = cur_x;
-                                        }
-                                        
-                                        if (new_height <= 0) {
-                                            cur_layer.y = cur_layer.y + cur_layer.height - 1;
-                                            cur_layer.height = 1;
-                                        } else {
-                                            cur_layer.height = new_height;
-                                            cur_layer.y -= y_move_amt;
-                                            mouse_starting_y = cur_y;
-                                        }
-                                    }
+                                /// Resize
+                                if (which_decoration == "ul") {
+                                    resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x1", y1: "y1", x2: "x2", y2: "y2", x3: "x3", y3: "y3", x4: "x4", y4: "y4"});
+                                } else if (which_decoration == "ur") {
+                                    resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x2", y1: "y2", x2: "x1", y2: "y1", x3: "x4", y3: "y4", x4: "x3", y4: "y3"});
+                                } else if (which_decoration == "br") {
+                                    resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x3", y1: "y3", x2: "x4", y2: "y4", x3: "x1", y3: "y1", x4: "x2", y4: "y2"});
+                                } else if (which_decoration == "bl") {
+                                    resize_layer(cur_layer, keep_aspect_ratio, {x: cur_x, y: cur_y}, {x1: "x4", y1: "y4", x2: "x3", y2: "y3", x3: "x2", y3: "y2", x4: "x1", y4: "y1"});
                                 }
                                 
                                 /// Since there is a small amount of rounding, it is best not to recalculate the aspect ratio if the aspect ratio is supposed to be kept.
