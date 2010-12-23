@@ -1025,6 +1025,8 @@
                             add_menu_item("Reset Aspect Ratio", function () {});
                         }
                         
+                        add_menu_item("Delete", function () {});
+                        
                         menu_el.style.cssText = "display: block; position: absolute; left: " + (pos.x + canvas_el.offsetLeft) + "px; top: " + (pos.y + canvas_el.offsetTop) + "px;";
                     },
                     hide_menu: function ()
