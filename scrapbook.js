@@ -995,7 +995,7 @@
                     
                     el = document.createElement("div");
                     el.innerHTML = text;
-                    el.onclick = click_func;
+                    el.onmousedown = click_func;
                     menu_el.insertBefore(el, null);
                 }
                 
@@ -1022,7 +1022,14 @@
                         }
                         
                         if (cur_layer.aspect_ratio != cur_layer.orig_aspect_ratio) {
-                            add_menu_item("Reset Aspect Ratio", function () {});
+                            add_menu_item("Reset Aspect Ratio", function ()
+                            {
+                                cur_layer.width = cur_layer.height * cur_layer.orig_aspect_ratio;
+                                cur_layer.aspect_ratio = cur_layer.orig_aspect_ratio;
+                                cur_layer.corner_points = rotate_rect(cur_layer.angle, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
+                                ///FIXME: The layer's X and Y values change, but they really shouldn't.
+                                redraw();
+                            });
                         }
                         
                         add_menu_item("Delete", function () {});
@@ -1066,7 +1073,7 @@
             
             document.onmousedown = function (e)
             {
-                /// This will hide the context menu even if the user clickec off of the canvas.
+                /// This will hide the context menu even if the user clicked off of the canvas.
                 menu_manager.hide_menu();
             }
         }());
