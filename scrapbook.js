@@ -33,6 +33,7 @@
             
             /// Functions
             menu_manager,
+            get_text_dimensions,
             
             /// Misc
             PI  = Math.PI,
@@ -45,6 +46,40 @@
         /// Width and height must be set with setAttribute() to avoid stretching.
         canvas_el.setAttribute("width",  canvas.width);
         canvas_el.setAttribute("height", canvas.height);
+        
+        
+        get_text_dimensions = (function ()
+        {
+            var test_el = document.createElement("div");
+            
+            test_el.style.display = "none";
+            test_el.style.padding = "0";
+            test_el.style.margin  = "0";
+            test_el.style.border  = "0";
+            
+            document.body.appendChild(test_el);
+            
+            return function (text, style, max_width)
+            {
+                var dim;
+                /// Remove old text, in any.
+                test_el.innerHTML = "";
+                test_el.style.cssText = style;
+                test_el.style.maxWidth = max_width;
+                test_el.appendChild(document.createTextNode(text));
+                test_el.style.display = "inline";
+                
+                dim = {
+                    width:  test_el.offsetWidth,
+                    height: test_el.offsetHeight,
+                };
+                
+                test_el.style.display = "none";
+                
+                return dim;
+            };
+        }());
+        
         
         /**
          * Rotate points of a rectangle around its center.
@@ -349,7 +384,8 @@
                 context.save();
                 context.font = obj.font + " " + obj.font_size;
                 //alert(context.measureText(text).toSource());
-                alert(context.measureText(text).width);
+                //alert(context.measureText(text).width);
+                alert(get_text_dimensions(text, "font-family:" + obj.font + ";font-size:" + obj.font_size + ";").toSource());
                 context.restore();
             }
             
