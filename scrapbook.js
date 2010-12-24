@@ -231,40 +231,48 @@
                 /// If visible
                 cur_layer = layers[i];
                 
-                /// Is there a smaller version and is it not too small?
-                if (cur_layer.img_small && cur_layer.width <= cur_layer.smaller_w && cur_layer.height <= cur_layer.smaller_h) {
-                    cur_img = cur_layer.img_small;
-                    
-                    /// Should there be an even smaller image?
-                    if (cur_layer.width < (cur_layer.smaller_w - 25) && cur_layer.height < (cur_layer.smaller_h - 25)) {
-                        create_smaller_img(cur_layer);
-                    }
-                } else {
-                    cur_img = cur_layer.img;
-                    
-                    /// Should there be a smaller image?
-                    if (cur_layer.width < (cur_layer.orig_w - 25) && cur_layer.height < (cur_layer.orig_h - 25)) {
-                        create_smaller_img(cur_layer);
-                    }
-                }
-                
                 context.save();
                 
-                context.globalAlpha              = cur_layer.opacity;
-                context.globalCompositeOperation = cur_layer.composite;
-                
-                /// If rotated
-                if (cur_layer.angle !== 0) {
-                    context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
-                    context.rotate(cur_layer.angle);
-                    /// If an image
-                    context.drawImage(cur_img, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width, cur_layer.height);
+                if (cur_layer.type == "img") {
+                    /// Is there a smaller version and is it not too small?
+                    if (cur_layer.img_small && cur_layer.width <= cur_layer.smaller_w && cur_layer.height <= cur_layer.smaller_h) {
+                        cur_img = cur_layer.img_small;
+                        
+                        /// Should there be an even smaller image?
+                        if (cur_layer.width < (cur_layer.smaller_w - 25) && cur_layer.height < (cur_layer.smaller_h - 25)) {
+                            create_smaller_img(cur_layer);
+                        }
+                    } else {
+                        cur_img = cur_layer.img;
+                        
+                        /// Should there be a smaller image?
+                        if (cur_layer.width < (cur_layer.orig_w - 25) && cur_layer.height < (cur_layer.orig_h - 25)) {
+                            create_smaller_img(cur_layer);
+                        }
+                    }
+                    
+                    context.globalAlpha              = cur_layer.opacity;
+                    context.globalCompositeOperation = cur_layer.composite;
+                    
+                    /// If rotated
+                    if (cur_layer.angle !== 0) {
+                        context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
+                        context.rotate(cur_layer.angle);
+                        /// If an image
+                        context.drawImage(cur_img, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width, cur_layer.height);
+                    } else {
+                        /// If an image
+                        context.drawImage(cur_img, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
+                    }
+                    
+                /// Text
                 } else {
-                    /// If an image
-                    context.drawImage(cur_img, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
+                    context.font = cur_layer.font + " " + cur_layer.font_size;
+                    context.fillText(cur_layer.text, cur_layer.x, cur_layer.y);
                 }
                 
                 context.restore();
+                
                 ++i;
             }
             
@@ -334,7 +342,15 @@
                 obj.orig_aspect_ratio = obj.orig_w / obj.orig_h;
                 obj.aspect_ratio      = obj.orig_aspect_ratio;
             } else {
+                obj.font = "arial";
+                obj.font_size = "18px";
+                obj.font_color = "#FF0000";
                 obj.text = text;
+                context.save();
+                context.font = obj.font + " " + obj.font_size;
+                //alert(context.measureText(text).toSource());
+                alert(context.measureText(text).width);
+                context.restore();
             }
             
             return obj;
@@ -952,23 +968,29 @@
                 }
             };
             
+            
+            function switch_decoration()
+            {
+                switch (cur_decoration) {
+                case decoration_resize:
+                    cur_decoration = decoration_rotate;
+                    break;
+                case decoration_rotate:
+                    ///FIXME: Temporarily skipping crop until I have the time to write it.
+                    //cur_decoration = decoration_crop;
+                    cur_decoration = decoration_resize;
+                    break;
+                case decoration_crop:
+                    cur_decoration = decoration_resize;
+                    break;
+                }
+            }
+            
             canvas_el.ondblclick = function (e)
             {
                 /// Since onmousedown already fired, the layer is selected already.
                 if (selected_layer >= 0) {
-                    switch (cur_decoration) {
-                    case decoration_resize:
-                        cur_decoration = decoration_rotate;
-                        break;
-                    case decoration_rotate:
-                        ///FIXME: Temporarily skipping crop until I have the time to write it.
-                        //cur_decoration = decoration_crop;
-                        cur_decoration = decoration_resize;
-                        break;
-                    case decoration_crop:
-                        cur_decoration = decoration_resize;
-                        break;
-                    }
+                    switch_decoration();
                     redraw();
                 }
             };
@@ -1002,37 +1024,56 @@
                 return {
                     display_menu: function (pos, layer)
                     {
-                        var cur_layer = layers[layer];
+                        var cur_layer;
                         
                         /// Clear old menu.
                         menu_el.innerHTML = "";
                         
                         clearTimeout(hide_menu_timeout);
                         
-                        if (layer > 0) {
-                            add_menu_item("Send Backward", function () {});
+                        if (layer >= 0) {
+                            cur_layer = layers[layer];
                             
-                            add_menu_item("Send to Back", function () {});
-                        }
-                        
-                        if (layer < layers.length - 1) {
-                            add_menu_item("Bring Forward", function () {});
-                            
-                            add_menu_item("Brint to Front", function () {});
-                        }
-                        
-                        if (cur_layer.aspect_ratio != cur_layer.orig_aspect_ratio) {
-                            add_menu_item("Reset Aspect Ratio", function ()
+                            add_menu_item("Change Tool", function ()
                             {
-                                cur_layer.width = cur_layer.height * cur_layer.orig_aspect_ratio;
-                                cur_layer.aspect_ratio = cur_layer.orig_aspect_ratio;
-                                cur_layer.corner_points = rotate_rect(cur_layer.angle, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
-                                ///FIXME: The layer's X and Y values change, but they really shouldn't.
+                                switch_decoration();
                                 redraw();
+                            });
+                            
+                            if (layer > 0) {
+                                add_menu_item("Send Backward", function () {});
+                                
+                                add_menu_item("Send to Back", function () {});
+                            }
+                            
+                            if (layer < layers.length - 1) {
+                                add_menu_item("Bring Forward", function () {});
+                                
+                                add_menu_item("Brint to Front", function () {});
+                            }
+                            
+                            if (cur_layer.aspect_ratio != cur_layer.orig_aspect_ratio) {
+                                add_menu_item("Reset Aspect Ratio", function ()
+                                {
+                                    cur_layer.width = cur_layer.height * cur_layer.orig_aspect_ratio;
+                                    cur_layer.aspect_ratio = cur_layer.orig_aspect_ratio;
+                                    cur_layer.corner_points = rotate_rect(cur_layer.angle, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
+                                    ///FIXME: The layer's X and Y values change, but they really shouldn't.
+                                    redraw();
+                                });
+                            }
+                            
+                            add_menu_item("Delete", function () {});
+                        } else {
+                            add_menu_item("Add Text", function ()
+                            {
+                                var new_layer = create_new_layer("text", null, pos.x, pos.y, "Enter Text");
+                                layers[layers.length] = new_layer;
+                                redraw();
+                                //edit_text(new_layer);
                             });
                         }
                         
-                        add_menu_item("Delete", function () {});
                         
                         menu_el.style.cssText = "display: block; position: absolute; left: " + (pos.x + canvas_el.offsetLeft) + "px; top: " + (pos.y + canvas_el.offsetTop) + "px;";
                     },
@@ -1052,9 +1093,7 @@
                 e.stopPropagation();
                 e.preventDefault();
                 
-                if (selected_layer >= 0) {
-                    menu_manager.display_menu(get_relative_x_y(e), selected_layer);
-                }
+                menu_manager.display_menu(get_relative_x_y(e), selected_layer);
                 
                 return false;
             }, true);
