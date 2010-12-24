@@ -305,7 +305,14 @@
                     context.textBaseline = "top";
                     context.font = cur_layer.font_size + " " + cur_layer.font_family;
                     context.fillStyle = cur_layer.font_color;
-                    context.fillText(cur_layer.text, cur_layer.x, cur_layer.y);
+                    
+                    if (cur_layer.angle !== 0) {
+                        context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
+                        context.rotate(cur_layer.angle);
+                        context.fillText(cur_layer.text, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width);
+                    } else {
+                        context.fillText(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.width);
+                    }
                 }
                 
                 context.restore();
