@@ -47,7 +47,6 @@
         canvas_el.setAttribute("width",  canvas.width);
         canvas_el.setAttribute("height", canvas.height);
         
-        
         get_text_dimensions = (function ()
         {
             var test_el = document.createElement("div");
@@ -302,7 +301,10 @@
                     
                 /// Text
                 } else {
-                    context.font = cur_layer.font + " " + cur_layer.font_size;
+                    /// Draw text starting from the upper left corner.
+                    context.textBaseline = "top";
+                    context.font = cur_layer.font_size + " " + cur_layer.font_family;
+                    context.fillStyle = cur_layer.font_color;
                     context.fillText(cur_layer.text, cur_layer.x, cur_layer.y);
                 }
                 
@@ -322,7 +324,8 @@
             var fit_into_height,
                 fit_into_width,
                 obj,
-                shrink_by;
+                shrink_by,
+                temp_obj;
             
             obj = {
                 angle:     0,
@@ -360,34 +363,38 @@
                     obj.width  = obj.orig_w;
                 }
                 
-                obj.corner_points = {
-                    x1: x,
-                    y1: y,
-                    
-                    x2: x + obj.width,
-                    y2: y,
-                    
-                    x3: x + obj.width,
-                    y3: y + obj.height,
-                    
-                    x4: x,
-                    y4: y + obj.height
-                };
-                
                 obj.orig_aspect_ratio = obj.orig_w / obj.orig_h;
                 obj.aspect_ratio      = obj.orig_aspect_ratio;
             } else {
-                obj.font = "arial";
+                obj.font_family = "arial";
                 obj.font_size = "18px";
                 obj.font_color = "#FF0000";
+                obj.weight = "normal";
+                //obj.italics = "normal";
                 obj.text = text;
                 context.save();
                 context.font = obj.font + " " + obj.font_size;
                 //alert(context.measureText(text).toSource());
                 //alert(context.measureText(text).width);
-                alert(get_text_dimensions(text, "font-family:" + obj.font + ";font-size:" + obj.font_size + ";").toSource());
+                temp_obj = get_text_dimensions(text, "font-family:" + obj.font_family + ";font-size:" + obj.font_size + ";");
+                obj.width  = temp_obj.width;
+                obj.height = temp_obj.height;
                 context.restore();
             }
+            
+            obj.corner_points = {
+                x1: x,
+                y1: y,
+                
+                x2: x + obj.width,
+                y2: y,
+                
+                x3: x + obj.width,
+                y3: y + obj.height,
+                
+                x4: x,
+                y4: y + obj.height
+            };
             
             return obj;
         }
