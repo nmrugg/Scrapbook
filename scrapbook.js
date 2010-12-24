@@ -903,7 +903,7 @@
                                 cur_layer.corner_points.x4 -= x_move_amt;
                                 cur_layer.corner_points.y4 -= y_move_amt;
                             } else if (cur_action === action_resize) {
-                                keep_aspect_ratio = !shift_down;
+                                keep_aspect_ratio = !shift_down && cur_layer.type == "img";
                                 
                                 /// Resize
                                 if (which_decoration == "ul") {
@@ -917,7 +917,7 @@
                                 }
                                 
                                 /// Since there is a small amount of rounding, it is best not to recalculate the aspect ratio if the aspect ratio is supposed to be kept.
-                                if (!keep_aspect_ratio) {
+                                if (!keep_aspect_ratio && cur_layer.type == "img") {
                                     cur_layer.aspect_ratio = cur_layer.width / cur_layer.height;
                                 }
                             } else if (cur_action === action_rotate) {
