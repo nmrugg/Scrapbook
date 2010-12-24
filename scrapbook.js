@@ -34,6 +34,7 @@
             /// Functions
             menu_manager,
             get_text_dimensions,
+            text_manager,
             
             /// Misc
             PI  = Math.PI,
@@ -76,6 +77,51 @@
                 test_el.style.display = "none";
                 
                 return dim;
+            };
+        }());
+        
+        
+        text_manager = (function ()
+        {
+            var text_el = document.createElement("input");
+            
+            text_el.style.display  = "none";
+            text_el.type = "text";
+            text_el.style.outline    = "1px dashed rgba(0, 0, 0, .3)";
+            text_el.style.padding    = "0";
+            text_el.style.border     = "0";
+            text_el.style.margin     = "0";
+            text_el.style.position   = "absolute";
+            text_el.style.background = "#FFF";
+            
+            text_el.onmousedown = function (e)
+            {
+                e.stopPropagation();
+            }
+            
+            document.body.appendChild(text_el);
+            
+            return {
+                edit_text: function (cur_layer)
+                {
+                    window.setTimeout(function ()
+                    {
+                        text_el.value = cur_layer.text;
+                        text_el.style.left = ((cur_layer.x + canvas_el.offsetLeft) - 1) + "px";
+                        text_el.style.top  = ((cur_layer.y + canvas_el.offsetTop)  - (parseInt(cur_layer.font_size) * 0.2222222)) + "px";
+                        text_el.width = cur_layer.width;
+                        text_el.height = cur_layer.height;
+                        
+                        text_el.style.fontFamily = cur_layer.font_family;
+                        text_el.style.fontSize   = cur_layer.font_size;
+                        text_el.style.color      = cur_layer.font_color;
+                        
+                        text_el.style.display = "inline";
+                    }, 0);
+                }, hide_text: function ()
+                {
+                    text_el.style.display  = "none";
+                }
             };
         }());
         
@@ -373,7 +419,7 @@
                 obj.orig_aspect_ratio = obj.orig_w / obj.orig_h;
                 obj.aspect_ratio      = obj.orig_aspect_ratio;
             } else {
-                obj.font_family = "arial";
+                obj.font_family = "sans";
                 obj.font_size = "18px";
                 obj.font_color = "#FF0000";
                 obj.weight = "normal";
@@ -1084,6 +1130,13 @@
                         if (layer >= 0) {
                             cur_layer = layers[layer];
                             
+                            if (cur_layer.type == "text") {
+                                add_menu_item("Edit Text", function ()
+                                {
+                                    text_manager.edit_text(cur_layer);
+                                });
+                            }
+                            
                             add_menu_item("Change Tool", function ()
                             {
                                 switch_decoration();
@@ -1120,7 +1173,7 @@
                                 var new_layer = create_new_layer("text", null, pos.x, pos.y, "Enter Text");
                                 layers[layers.length] = new_layer;
                                 redraw();
-                                //edit_text(new_layer);
+                                text_manager.edit_text(new_layer);
                             });
                         }
                         
@@ -1164,6 +1217,8 @@
             {
                 /// This will hide the context menu even if the user clicked off of the canvas.
                 menu_manager.hide_menu();
+                
+                text_manager.hide_text();
             }
         }());
         
