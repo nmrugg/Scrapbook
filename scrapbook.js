@@ -1214,7 +1214,26 @@
                                 });
                             }
                             
-                            add_menu_item("Delete", function () {});
+                            add_menu_item("Delete", function ()
+                            {
+                                var layers_len = layers.length,
+                                    new_layers = [],
+                                    
+                                    new_count = 0,
+                                    old_count = 0;
+                                
+                                while (old_count < layers_len) {
+                                    if (old_count !== layer) {
+                                        new_layers[new_count] = layers[old_count];
+                                        ++new_count;
+                                    }
+                                    ++old_count;
+                                }
+                                
+                                layers = new_layers;
+                                
+                                redraw();
+                            });
                         } else {
                             add_menu_item("Add Text", function ()
                             {
