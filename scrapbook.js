@@ -1117,6 +1117,38 @@
                     menu_el.insertBefore(el, null);
                 }
                 
+                
+                function rearrange_layer(which_layer, new_pos, downward)
+                {
+                    var layers_len = layers.length,
+                        new_layers = [],
+                        
+                        new_count = 0,
+                        old_count = 0;
+                    
+                    if (new_pos >= 0 && new_pos < layers_len) {
+                        while (old_count < layers_len) {
+                            if (downward && old_count === new_pos) {
+                                new_layers[new_count] = layers[which_layer];
+                                ++new_count;
+                            }
+                            
+                            if (old_count !== which_layer) {
+                                new_layers[new_count] = layers[old_count];
+                                ++new_count;
+                            }
+                            
+                            if (!downward && old_count === new_pos) {
+                                new_layers[new_count] = layers[which_layer];
+                                ++new_count;
+                            }
+                            ++old_count;
+                        }
+                        
+                        layers = new_layers;
+                    }
+                }
+                
                 return {
                     display_menu: function (pos, layer)
                     {
@@ -1144,15 +1176,31 @@
                             });
                             
                             if (layer > 0) {
-                                add_menu_item("Send Backward", function () {});
+                                add_menu_item("Send Backward", function ()
+                                {
+                                    rearrange_layer(layer, layer - 1, true);
+                                    redraw();
+                                });
                                 
-                                add_menu_item("Send to Back", function () {});
+                                add_menu_item("Send to Back", function ()
+                                {
+                                    rearrange_layer(layer, 0, true);
+                                    redraw();
+                                });
                             }
                             
                             if (layer < layers.length - 1) {
-                                add_menu_item("Bring Forward", function () {});
+                                add_menu_item("Bring Forward", function ()
+                                {
+                                    rearrange_layer(layer, layer + 1, false);
+                                    redraw();
+                                });
                                 
-                                add_menu_item("Brint to Front", function () {});
+                                add_menu_item("Brint to Front", function ()
+                                {
+                                    rearrange_layer(layer, layers.length - 1, false);
+                                    redraw();
+                                });
                             }
                             
                             if (cur_layer.aspect_ratio != cur_layer.orig_aspect_ratio) {
