@@ -22,6 +22,8 @@ menu {
     text-align: left;
     
     cursor: pointer;
+    
+    margin: 0;
 }
 
 menu div:hover {

@@ -489,10 +489,10 @@
             var posX = 0,
                 posY = 0;
             
-            if (e.pageX || e.pageY) {
+            if (typeof e.pageX != "undefined") {
                 posX = e.pageX;
                 posY = e.pageY;
-            } else if (e.clientX || e.clientY) {
+            } else if (typeof e.clientX != "undefined") {
                 posX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
                 posY = e.clientY + document.body.scrollTop  + document.documentElement.scrollTop;
             }
