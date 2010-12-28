@@ -32,8 +32,9 @@
             decoration_crop   = 3,
             
             /// Functions
-            menu_manager,
+            draw_wrapped_text,
             get_text_dimensions,
+            menu_manager,
             text_manager,
             
             /// Misc
@@ -93,6 +94,7 @@
             text_el.style.margin     = "0";
             text_el.style.position   = "absolute";
             text_el.style.background = "#FFF";
+            text_el.style.whiteSpace = "pre-wrap";
             
             text_el.onmousedown = function (e)
             {
@@ -310,50 +312,88 @@
         }
         
         
-        function draw_wrapped_text(text, starting_x, starting_y, style, max_width)
+        draw_wrapped_text = (function ()
         {
-            var cur_line = "",
-                cur_word = 0,
-                cur_y    = starting_y,
-                dimensions = {},
-                potenial_line = "",
-                text_arr = text.split(/\s/),
-                text_arr_len;
-            
-            text_arr_len = text_arr.length;
-            
-            while (cur_word < text_arr_len) {
-                potenial_line += (potenial_line !== "" ? " " : "") + text_arr[cur_word];
+            function draw_line(text, starting_x, starting_y, style, max_width)
+            {
+                var cur_line = "",
+                    cur_word = 0,
+                    cur_y    = starting_y,
+                    dimensions = {},
+                    longest_width = 0,
+                    potenial_line = "",
+                    text_arr = text.split(/\s/),
+                    text_arr_len;
                 
-                if (!dimensions.height) {
-                    ///NOTE: This needs to be called once to figure out the height of a line of text.
-                    dimensions = get_text_dimensions(text_arr[0], style, max_width);
-                } else {
-                    dimensions.width = context.measureText(potenial_line).width;
+                text_arr_len = text_arr.length;
+                
+                while (cur_word < text_arr_len) {
+                    if (text_arr[cur_word] === "") {
+                        text_arr[cur_word] = " ";
+                    }
+                    potenial_line += (potenial_line !== "" ? " " : "") + text_arr[cur_word];
+                    
+                    if (!dimensions.height) {
+                        ///NOTE: This needs to be called once to figure out the height of a line of text.
+                        dimensions = get_text_dimensions(text_arr[0], style, max_width);
+                    } else {
+                        dimensions.width = context.measureText(potenial_line).width;
+                    }
+                    
+                    if (dimensions.width > max_width && cur_line !== "") {
+                        context.fillText(cur_line, starting_x, cur_y);
+                        
+                        cur_y += dimensions.height;
+                        
+                        cur_line = text_arr[cur_word];
+                        potenial_line = cur_line;
+                    } else {
+                        cur_line = potenial_line;
+                        
+                        if (dimensions.width > longest_width) {
+                            longest_width = dimensions.width;
+                        }
+                    }
+                    
+                    ++cur_word;
                 }
                 
-                if (dimensions.width > max_width && cur_line !== "") {
-                    context.fillText(cur_line, starting_x, cur_y);
-                    
-                    cur_y += dimensions.height;
-                    
-                    cur_line = text_arr[cur_word];
-                    potenial_line = cur_line;
-                } else {
-                    cur_line = potenial_line;
+                if (dimensions.width > longest_width) {
+                    longest_width = dimensions.width;
                 }
+                ///NOTE: The last line has to be draw after the loop.
+                context.fillText(cur_line, starting_x, cur_y);
                 
-                ++cur_word;
+                cur_y += dimensions.height;
+                
+                return {height: cur_y, width: longest_width};
             }
             
-            ///NOTE: The last line has to be draw after the loop.
-            context.fillText(cur_line, starting_x, cur_y);
-        }
+            return function (text, starting_x, starting_y, style, max_width)
+            {
+                var cur_line = 0,
+                    dimensions = {height: starting_y},
+                    longest_width = 0,
+                    text_arr = text.split(/\n/),
+                    text_arr_len;
+                
+                text_arr_len = text_arr.length;
+                
+                while (cur_line < text_arr_len) {
+                    dimensions = draw_line(text_arr[cur_line], starting_x, dimensions.height, style, max_width)
+                    if (dimensions.width > longest_width) {
+                        longest_width = dimensions.width;
+                    }
+                    ++cur_line;
+                }
+                
+                return {height: dimensions.height, width: longest_width};
+            }
+        }());
         
         function redraw()
         {
             ///TODO: redraw() should take dimension or a layer as a parameter and only redraw that part.
-            
             var cur_img,
                 cur_layer,
                 i = 0,
@@ -1289,6 +1329,10 @@
                                 }
                                 
                                 layers = new_layers;
+                                
+                                if (selected_layer === layer) {
+                                    selected_layer = -1;
+                                }
                                 
                                 redraw();
                             });
