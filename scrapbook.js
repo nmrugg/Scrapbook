@@ -83,10 +83,10 @@
         
         text_manager = (function ()
         {
-            var text_el = document.createElement("input");
+            var text_el = document.createElement("textarea");
             
             text_el.style.display  = "none";
-            text_el.type = "text";
+            //text_el.type = "text";
             text_el.style.outline    = "1px dashed rgba(0, 0, 0, .3)";
             text_el.style.padding    = "0";
             text_el.style.border     = "0";
@@ -108,19 +108,34 @@
                     {
                         text_el.value = cur_layer.text;
                         text_el.style.left = ((cur_layer.x + canvas_el.offsetLeft) - 1) + "px";
-                        text_el.style.top  = ((cur_layer.y + canvas_el.offsetTop)  - (parseInt(cur_layer.font_size) * 0.2222222)) + "px";
-                        text_el.width = cur_layer.width;
-                        text_el.height = cur_layer.height;
+                        text_el.style.top  = ((cur_layer.y + canvas_el.offsetTop)  - (parseInt(cur_layer.font_size) * 0.15)) + "px";
+                        
+                        text_el.style.width  = cur_layer.width  + "px";
+                        text_el.style.height = cur_layer.height + "px";
                         
                         text_el.style.fontFamily = cur_layer.font_family;
                         text_el.style.fontSize   = cur_layer.font_size;
                         text_el.style.color      = cur_layer.font_color;
+                        
+                        text_el.style.transform       = "rotate(" + cur_layer.angle + "rad)";
+                        text_el.style.MozTransform    = "rotate(" + cur_layer.angle + "rad)";
+                        text_el.style.OTransform      = "rotate(" + cur_layer.angle + "rad)";
+                        text_el.style.WebkitTransform = "rotate(" + cur_layer.angle + "rad)";
+                        text_el.style.MsTransform     = "rotate(" + cur_layer.angle + "rad)";
+                        
+                        text_el.onchange = function ()
+                        {
+                            cur_layer.text = text_el.value;
+                        };
+                        
+                        text_el.onkeyup = text_el.onchange;
                         
                         text_el.style.display = "inline";
                     }, 0);
                 }, hide_text: function ()
                 {
                     text_el.style.display  = "none";
+                    redraw();
                 }
             };
         }());
