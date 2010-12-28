@@ -314,7 +314,7 @@
             var cur_line = "",
                 cur_word = 0,
                 cur_y    = starting_y,
-                dimensions,
+                dimensions = {},
                 potenial_line = "",
                 text_arr = text.split(/\s/),
                 text_arr_len;
@@ -323,7 +323,13 @@
             
             while (cur_word < text_arr_len) {
                 potenial_line += (potenial_line !== "" ? " " : "") + text_arr[cur_word];
-                dimensions = get_text_dimensions(potenial_line, style, max_width);
+                
+                if (!dimensions.height) {
+                    ///NOTE: This needs to be called once to figure out the height of a line of text.
+                    dimensions = get_text_dimensions(text_arr[0], style, max_width);
+                } else {
+                    dimensions.width = context.measureText(potenial_line).width;
+                }
                 
                 if (dimensions.width > max_width && cur_line !== "") {
                     context.fillText(cur_line, starting_x, cur_y);
