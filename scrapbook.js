@@ -84,17 +84,16 @@
         
         text_manager = (function ()
         {
-            var text_el = document.createElement("textarea");
+            var is_visible = false,
+                text_el = document.createElement("textarea");
             
-            text_el.style.display  = "none";
-            //text_el.type = "text";
+            text_el.style.display    = "none";
             text_el.style.outline    = "1px dashed rgba(0, 0, 0, .3)";
             text_el.style.padding    = "0";
             text_el.style.border     = "0";
             text_el.style.margin     = "0";
             text_el.style.position   = "absolute";
             text_el.style.background = "#FFF";
-            text_el.style.whiteSpace = "pre-wrap";
             
             text_el.onmousedown = function (e)
             {
@@ -134,11 +133,18 @@
                         text_el.onblur  = text_el.onchange;
                         
                         text_el.style.display = "inline";
+                        is_visible = true;
+                        
+                        text_el.focus();
                     }, 0);
                 }, hide_text: function ()
                 {
-                    text_el.style.display  = "none";
-                    window.setTimeout(redraw, 0);
+                    if (is_visible) {
+                        text_el.style.display  = "none";
+                        is_visible = false;
+                        
+                        window.setTimeout(redraw, 0);
+                    }
                 }
             };
         }());
@@ -1154,7 +1160,7 @@
                     }
                 }
                 
-                if (last_layer != selected_layer) {
+                if (last_layer !== selected_layer) {
                     redraw();
                     
                     /// Last layer is no longer needed since it finished redrawing the parts that changed.
