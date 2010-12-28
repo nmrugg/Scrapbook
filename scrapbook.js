@@ -129,13 +129,14 @@
                         };
                         
                         text_el.onkeyup = text_el.onchange;
+                        text_el.onblur  = text_el.onchange;
                         
                         text_el.style.display = "inline";
                     }, 0);
                 }, hide_text: function ()
                 {
                     text_el.style.display  = "none";
-                    redraw();
+                    window.setTimeout(redraw, 0);
                 }
             };
         }());
