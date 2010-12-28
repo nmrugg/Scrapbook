@@ -308,6 +308,41 @@
                
         }
         
+        
+        function draw_wrapped_text(text, starting_x, starting_y, style, max_width)
+        {
+            var cur_line = "",
+                cur_word = 0,
+                cur_y    = starting_y,
+                dimensions,
+                potenial_line = "",
+                text_arr = text.split(/\s/),
+                text_arr_len;
+            
+            text_arr_len = text_arr.length;
+            
+            while (cur_word < text_arr_len) {
+                potenial_line += (potenial_line !== "" ? " " : "") + text_arr[cur_word];
+                dimensions = get_text_dimensions(potenial_line, style, max_width);
+                
+                if (dimensions.width > max_width && cur_line !== "") {
+                    context.fillText(cur_line, starting_x, cur_y);
+                    
+                    cur_y += dimensions.height;
+                    
+                    cur_line = text_arr[cur_word];
+                    potenial_line = cur_line;
+                } else {
+                    cur_line = potenial_line;
+                }
+                
+                ++cur_word;
+            }
+            
+            ///NOTE: The last line has to be draw after the loop.
+            context.fillText(cur_line, starting_x, cur_y);
+        }
+        
         function redraw()
         {
             ///TODO: redraw() should take dimension or a layer as a parameter and only redraw that part.
@@ -328,6 +363,7 @@
                 
                 context.save();
                 
+                /// If an image
                 if (cur_layer.type == "img") {
                     /// Is there a smaller version and is it not too small?
                     if (cur_layer.img_small && cur_layer.width <= cur_layer.smaller_w && cur_layer.height <= cur_layer.smaller_h) {
@@ -353,10 +389,8 @@
                     if (cur_layer.angle !== 0) {
                         context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
                         context.rotate(cur_layer.angle);
-                        /// If an image
                         context.drawImage(cur_img, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width, cur_layer.height);
                     } else {
-                        /// If an image
                         context.drawImage(cur_img, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
                     }
                     
@@ -370,9 +404,11 @@
                     if (cur_layer.angle !== 0) {
                         context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
                         context.rotate(cur_layer.angle);
-                        context.fillText(cur_layer.text, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width);
+                        //context.fillText(cur_layer.text, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width);
+                        draw_wrapped_text(cur_layer.text, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width);
                     } else {
-                        context.fillText(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.width);
+                        //context.fillText(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.width);
+                        draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width);
                     }
                 }
                 
