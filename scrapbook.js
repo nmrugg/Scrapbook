@@ -369,7 +369,8 @@
                         dimensions.width = context.measureText(potenial_line).width;
                     }
                     
-                    if (dimensions.width > max_width) {
+                    ///NOTE: cur_line !== "" prevents breaking before the first word.
+                    if (dimensions.width > max_width && cur_line !== "") {
                         if (!dont_draw) {
                             context.fillText(cur_line, starting_x, cur_y);
                         }
@@ -378,16 +379,12 @@
                         
                         cur_line = text_arr[cur_word];
                         potenial_line = cur_line;
-                        
-                        if (dimensions.width > longest_width) {
-                            longest_width = dimensions.width;
-                        }
                     } else {
                         cur_line = potenial_line;
-                        
-                        if (dimensions.width > longest_width) {
-                            longest_width = dimensions.width;
-                        }
+                    }
+                    
+                    if (dimensions.width > longest_width) {
+                        longest_width = dimensions.width;
                     }
                     
                     ++cur_word;
