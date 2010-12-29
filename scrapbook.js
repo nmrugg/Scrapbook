@@ -85,16 +85,19 @@
         
         function check_textbox_dimensions(cur_layer, which_decoration)
         {
-            var max_dimensions;
+            var min_dimensions;
             
             context.save();
             context.textBaseline = "top";
             context.font = cur_layer.font_size + " " + cur_layer.font_family;
             context.fillStyle = cur_layer.font_color;
             
-            max_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width, true);
+            min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width, true);
             context.restore();
-            document.title = "w:" + max_dimensions.width + " h:" + max_dimensions.height;
+            //document.title = "w:" + min_dimensions.width + " h:" + min_dimensions.height;
+            //if (cur_layer.width < min_dimensions.width) {
+                //cur_layer.width = min_dimensions.width;
+            //}
         }
         
         text_manager = (function ()
@@ -344,6 +347,7 @@
                     cur_y    = starting_y,
                     dimensions = {},
                     longest_width = 0,
+                    min_width = 0,
                     potenial_line = "",
                     text_arr = text.split(/\s/),
                     text_arr_len;
@@ -351,6 +355,8 @@
                 text_arr_len = text_arr.length;
                 
                 while (cur_word < text_arr_len) {
+                    /// Allow for double spaces.
+                    ///BUG: This seems to insert two spaces.
                     if (text_arr[cur_word] === "") {
                         text_arr[cur_word] = " ";
                     }
@@ -363,7 +369,14 @@
                         dimensions.width = context.measureText(potenial_line).width;
                     }
                     
-                    if (dimensions.width > max_width && cur_line !== "") {
+                    /// Capture the width of the first word on a line to know the minimum size allowed.
+                    if (cur_line === "") {
+                        if (dimensions.width > min_width) {
+                            min_width = dimensions.width;
+                        }
+                    }
+                    
+                    if (dimensions.width > max_width) {
                         if (!dont_draw) {
                             context.fillText(cur_line, starting_x, cur_y);
                         }
@@ -383,7 +396,8 @@
                     ++cur_word;
                 }
                 
-                dimensions.width = context.measureText(potenial_line).width;
+                //dimensions.width = context.measureText(cur_line).width;
+                
                 if (dimensions.width > longest_width) {
                     longest_width = dimensions.width;
                 }
@@ -394,13 +408,15 @@
                 
                 cur_y += dimensions.height;
                 
-                return {height: cur_y - starting_y, width: longest_width};
+                return {height: cur_y - starting_y, width: longest_width, min_width: min_width};
             }
             
             return function (text, starting_x, starting_y, style, max_width, dont_draw)
             {
                 var cur_line = 0,
                     dimensions = {height: 0},
+                    height = 0,
+                    min_width     = 0,
                     longest_width = 0,
                     text_arr = text.split(/\n/),
                     text_arr_len;
@@ -408,14 +424,18 @@
                 text_arr_len = text_arr.length;
                 
                 while (cur_line < text_arr_len) {
-                    dimensions = draw_line(text_arr[cur_line], starting_x, dimensions.height + starting_y, style, max_width, dont_draw)
+                    dimensions = draw_line(text_arr[cur_line], starting_x, height + starting_y, style, max_width, dont_draw)
+                    height += dimensions.height;
                     if (dimensions.width > longest_width) {
                         longest_width = dimensions.width;
+                    }
+                    if (dimensions.min_width > min_width) {
+                        min_width = dimensions.min_width;
                     }
                     ++cur_line;
                 }
                 
-                return {height: dimensions.height, width: longest_width};
+                return {height: height, width: longest_width, min_width: min_width};
             }
         }());
         
@@ -898,21 +918,46 @@
                         
                         
                         /// Check X
-                        if (x1 > x3 && should_x1_be_less) {
+                        if (should_x1_be_less && x1 > x3) {
                             x1 = x3 - 1;
                             change_x = true;
-                        } else if (x1 < x3 && !should_x1_be_less) {
+                        } else if (!should_x1_be_less && x1 < x3) {
                             x1 = x3 + 1;
                             change_x = true;
                         }
                         
                         /// Check Y
-                        if (y1 > y3 && should_y1_be_less) {
+                        if (should_y1_be_less && y1 > y3) {
                             y1 = y3 - 1;
                             change_y = true;
-                        } else if (y1 < y3 && !should_y1_be_less) {
+                        } else if (!should_y1_be_less && y1 < y3) {
                             y1 = y3 + 1;
                             change_y = true;
+                        }
+                        
+                        ///is textbox
+                        if (true) {
+                            var min_dimensions;
+                            
+                            context.save();
+                            context.textBaseline = "top";
+                            context.font = cur_layer.font_size + " " + cur_layer.font_family;
+                            context.fillStyle = cur_layer.font_color;
+                            
+                            min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width, true);
+                            context.restore();
+                            //document.title = "w:" + min_dimensions.width + " h:" + min_dimensions.height;
+                            if (cur_layer.width < min_dimensions.min_width) {
+                                cur_layer.width = min_dimensions.min_width;
+                            }
+                            /// Check X
+                            if (should_x1_be_less && x3 - x1 < min_dimensions.min_width) {
+                                x1 = x3 - min_dimensions.min_width;
+                                change_x = true;
+                            } else if (!should_x1_be_less && x1 - x3 < min_dimensions.min_width) {
+                                x1 = x3 + min_dimensions.min_width;
+                                change_x = true;
+                            }
                         }
                         
                         if (keep_aspect_ratio) {
