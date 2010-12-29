@@ -369,13 +369,6 @@
                         dimensions.width = context.measureText(potenial_line).width;
                     }
                     
-                    /// Capture the width of the first word on a line to know the minimum size allowed.
-                    if (cur_line === "") {
-                        if (dimensions.width > min_width) {
-                            min_width = dimensions.width;
-                        }
-                    }
-                    
                     if (dimensions.width > max_width) {
                         if (!dont_draw) {
                             context.fillText(cur_line, starting_x, cur_y);
@@ -385,6 +378,10 @@
                         
                         cur_line = text_arr[cur_word];
                         potenial_line = cur_line;
+                        
+                        if (dimensions.width > longest_width) {
+                            longest_width = dimensions.width;
+                        }
                     } else {
                         cur_line = potenial_line;
                         
@@ -396,11 +393,6 @@
                     ++cur_word;
                 }
                 
-                //dimensions.width = context.measureText(cur_line).width;
-                
-                if (dimensions.width > longest_width) {
-                    longest_width = dimensions.width;
-                }
                 if (!dont_draw && cur_line !== "") {
                     ///NOTE: The last line has to be draw after the loop.
                     context.fillText(cur_line, starting_x, cur_y);
@@ -882,7 +874,7 @@
                     /**
                      * Check to see if the user is trying to resize the element too far to where it would be inverted and optionally check the aspect ratio.
                      */
-                    function check_dimensions(angle, new_pos, opposite_pos, should_x1_be_less, should_y1_be_less, keep_aspect_ratio, aspect_ratio)
+                    function check_dimensions(angle, new_pos, opposite_pos, should_x1_be_less, should_y1_be_less, keep_aspect_ratio, aspect_ratio, is_textbox)
                     {
                         var center_x = (new_pos.x + opposite_pos.x) / 2,
                             center_y = (new_pos.y + opposite_pos.y) / 2,
@@ -935,8 +927,7 @@
                             change_y = true;
                         }
                         
-                        ///is textbox
-                        if (true) {
+                        if (is_textbox) {
                             var min_dimensions;
                             
                             context.save();
@@ -946,10 +937,7 @@
                             
                             min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width, true);
                             context.restore();
-                            //document.title = "w:" + min_dimensions.width + " h:" + min_dimensions.height;
-                            if (cur_layer.width < min_dimensions.min_width) {
-                                cur_layer.width = min_dimensions.min_width;
-                            }
+                            document.title = "min-w:" + min_dimensions.min_width + " h:" + min_dimensions.height + " w:" + min_dimensions.width;
                             /// Check X
                             if (should_x1_be_less && x3 - x1 < min_dimensions.min_width) {
                                 x1 = x3 - min_dimensions.min_width;
@@ -996,7 +984,7 @@
                         var opposite_points,
                             unrotated_x_y;
                         
-                        check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x4"), (points.y1 == "y1" || points.y1 == "y2"), keep_aspect_ratio, cur_layer.aspect_ratio);
+                        check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x4"), (points.y1 == "y1" || points.y1 == "y2"), keep_aspect_ratio, cur_layer.aspect_ratio, cur_layer.type === "text");
                         
                         if (cur_layer.type == "text") {
                             check_textbox_dimensions(cur_layer);
