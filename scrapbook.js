@@ -54,9 +54,6 @@
             var test_el = document.createElement("div");
             
             test_el.style.display = "none";
-            test_el.style.padding = "0";
-            test_el.style.margin  = "0";
-            test_el.style.border  = "0";
             
             document.body.appendChild(test_el);
             
@@ -65,9 +62,14 @@
                 var dim;
                 /// Remove old text, in any.
                 test_el.innerHTML = "";
-                test_el.style.cssText = style;
-                test_el.style.maxWidth = max_width;
-                test_el.appendChild(document.createTextNode(text));
+                test_el.style.cssText = "display: none;" + style + "; position: absolute; padding: 0; margin: 0; border: 0; white-space: pre-wrap";
+                
+                if (max_width) {
+                    test_el.style.maxWidth = max_width;
+                }
+                /// Convert spaces to non-breaking spaces to preserve whitespace.
+                ///NOTE: \u00A0 is Unicode for the non-breaking space (&nbsp;).
+                test_el.appendChild(document.createTextNode(text.replace(" ", "\u00A0")));
                 test_el.style.display = "inline";
                 
                 dim = {
@@ -81,6 +83,19 @@
             };
         }());
         
+        function check_textbox_dimensions(cur_layer, which_decoration)
+        {
+            var max_dimensions;
+            
+            context.save();
+            context.textBaseline = "top";
+            context.font = cur_layer.font_size + " " + cur_layer.font_family;
+            context.fillStyle = cur_layer.font_color;
+            
+            max_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width, true);
+            context.restore();
+            document.title = "w:" + max_dimensions.width + " h:" + max_dimensions.height;
+        }
         
         text_manager = (function ()
         {
@@ -142,6 +157,8 @@
                     if (is_visible) {
                         text_el.style.display  = "none";
                         is_visible = false;
+                        
+                        check_textbox_dimensions(cur_layer);
                         
                         window.setTimeout(redraw, 0);
                     }
@@ -320,7 +337,7 @@
         
         draw_wrapped_text = (function ()
         {
-            function draw_line(text, starting_x, starting_y, style, max_width)
+            function draw_line(text, starting_x, starting_y, style, max_width, dont_draw)
             {
                 var cur_line = "",
                     cur_word = 0,
@@ -347,7 +364,9 @@
                     }
                     
                     if (dimensions.width > max_width && cur_line !== "") {
-                        context.fillText(cur_line, starting_x, cur_y);
+                        if (!dont_draw) {
+                            context.fillText(cur_line, starting_x, cur_y);
+                        }
                         
                         cur_y += dimensions.height;
                         
@@ -364,21 +383,24 @@
                     ++cur_word;
                 }
                 
+                dimensions.width = context.measureText(potenial_line).width;
                 if (dimensions.width > longest_width) {
                     longest_width = dimensions.width;
                 }
-                ///NOTE: The last line has to be draw after the loop.
-                context.fillText(cur_line, starting_x, cur_y);
+                if (!dont_draw && cur_line !== "") {
+                    ///NOTE: The last line has to be draw after the loop.
+                    context.fillText(cur_line, starting_x, cur_y);
+                }
                 
                 cur_y += dimensions.height;
                 
-                return {height: cur_y, width: longest_width};
+                return {height: cur_y - starting_y, width: longest_width};
             }
             
-            return function (text, starting_x, starting_y, style, max_width)
+            return function (text, starting_x, starting_y, style, max_width, dont_draw)
             {
                 var cur_line = 0,
-                    dimensions = {height: starting_y},
+                    dimensions = {height: 0},
                     longest_width = 0,
                     text_arr = text.split(/\n/),
                     text_arr_len;
@@ -386,7 +408,7 @@
                 text_arr_len = text_arr.length;
                 
                 while (cur_line < text_arr_len) {
-                    dimensions = draw_line(text_arr[cur_line], starting_x, dimensions.height, style, max_width)
+                    dimensions = draw_line(text_arr[cur_line], starting_x, dimensions.height + starting_y, style, max_width, dont_draw)
                     if (dimensions.width > longest_width) {
                         longest_width = dimensions.width;
                     }
@@ -408,7 +430,7 @@
             ///TODO: Use last_layer to figure out what parts need to be redrawn.
             
             /// Redraw the entire canvas.
-            canvas_el.setAttribute("width",  canvas.width);
+            canvas_el.setAttribute("width", canvas.width);
             
             while (i < layer_count) {
                 /// If visible
@@ -930,6 +952,10 @@
                             unrotated_x_y;
                         
                         check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x4"), (points.y1 == "y1" || points.y1 == "y2"), keep_aspect_ratio, cur_layer.aspect_ratio);
+                        
+                        if (cur_layer.type == "text") {
+                            check_textbox_dimensions(cur_layer);
+                        }
                                                 
                         opposite_points = get_opposite_points(cur_layer.angle, new_pos.x, new_pos.y, cur_layer.corner_points[points.x3], cur_layer.corner_points[points.y3]);
                         
@@ -1118,7 +1144,7 @@
                 
                 /// Store the last layer so that it doesn't have to redraw the entire page.
                 last_layer = selected_layer;
-                tmp_layer  = get_layer_from_pos(get_relative_x_y(e));
+                tmp_layer  = get_layer_from_pos(cur_pos);
                 
                 if (typeof tmp_layer == "string") {
                     if (cur_decoration === decoration_resize) {
@@ -1408,7 +1434,6 @@
     {
         if (e.lengthComputable) {
             /// Percent = e.loaded / e.total;
-            //document.title = e.loaded / e.total;
         }
     }
     
