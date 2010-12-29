@@ -296,20 +296,16 @@
         
         function create_smaller_img(cur_layer)
         {
-            /// Prevent the smaller image from being created too many times.
-            if (cur_layer.getting_smaller_img) {
-                return;
-            }
-            
-            cur_layer.getting_smaller_img = true;
+            /// Prevent previous timeout, if any.
+            window.clearTimeout(cur_layer.tmp_create_smaller_timeout);
             
             ///TODO: It would be good if there was a way to clear the timeout when the image is resized.
-            window.setTimeout(function ()
+            cur_layer.tmp_create_smaller_timeout = window.setTimeout(function ()
             {
                 var little_canvas = document.createElement("canvas"),
                     little_context,
                     little_img    = new Image();
-                    
+                
                 little_context = little_canvas.getContext("2d");
                 
                 little_canvas.setAttribute("width",  cur_layer.width);
@@ -326,15 +322,12 @@
                     cur_layer.smaller_w = cur_layer.width;
                     cur_layer.smaller_h = cur_layer.height;
                     
-                    cur_layer.getting_smaller_img = null;
-                    
                     /// Make sure the canvas is out of the memory.
                     little_canvas = null;
                 };
                 
                 little_img.src = little_canvas.toDataURL("image/png");
-            }, 2000)
-               
+            }, 2000);
         }
         
         
@@ -344,6 +337,7 @@
             {
                 var cur_line = "",
                     cur_word = 0,
+                    cur_width = 0,
                     cur_y    = starting_y,
                     dimensions = {},
                     longest_width = 0,
