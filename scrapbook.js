@@ -333,17 +333,17 @@
         
         draw_wrapped_text = (function ()
         {
-            function draw_line(text, starting_x, starting_y, style, max_width, dont_draw)
+            function draw_line(text, starting_x, starting_y, style, max_width, dont_draw, line_height)
             {
-                var cur_line = "",
-                    cur_word = 0,
-                    cur_width = 0,
-                    cur_y    = starting_y,
-                    dimensions = {},
+                var cur_line      = "",
+                    cur_word      = 0,
+                    cur_width     = 0,
+                    cur_y         = starting_y,
+                    dimensions    = {height: line_height},
                     longest_width = 0,
-                    min_width = 0,
+                    min_width     = 0,
                     potenial_line = "",
-                    text_arr = text.split(/\s/),
+                    text_arr      = text.split(/\s/),
                     text_arr_len,
                     tmp_width;
                 
@@ -402,13 +402,14 @@
                 
                 cur_y += dimensions.height;
                 
-                return {height: cur_y - starting_y, width: longest_width, min_width: min_width};
+                /// Send line height so that it can be sent back so that get_text_dimensions() does not have to run again because it is slow.
+                return {height: cur_y - starting_y, width: longest_width, min_width: min_width, line_height: dimensions.height};
             }
             
             return function (text, starting_x, starting_y, style, max_width, dont_draw)
             {
                 var cur_line = 0,
-                    dimensions = {height: 0},
+                    dimensions = {height: 0, line_height: null},
                     height = 0,
                     min_width     = 0,
                     longest_width = 0,
@@ -418,7 +419,7 @@
                 text_arr_len = text_arr.length;
                 
                 while (cur_line < text_arr_len) {
-                    dimensions = draw_line(text_arr[cur_line], starting_x, height + starting_y, style, max_width, dont_draw)
+                    dimensions = draw_line(text_arr[cur_line], starting_x, height + starting_y, style, max_width, dont_draw, dimensions.line_height)
                     height += dimensions.height;
                     if (dimensions.width > longest_width) {
                         longest_width = dimensions.width;
