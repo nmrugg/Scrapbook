@@ -465,6 +465,7 @@
             text_el.style.margin     = "0";
             text_el.style.position   = "absolute";
             text_el.style.background = "#FFF";
+            text_el.style.overflow   = "hidden";
             
             text_el.onmousedown = function (e)
             {
