@@ -1,4 +1,4 @@
-/*global FileReader */
+/*global window, FileReader */
 /*jslint white: true, browser: true, devel: true, forin: true, onevar: true, undef: true, nomen: true, newcap: true, immed: true */
 
 (function ()
@@ -13,6 +13,7 @@
                 width:  800
             },
             context = canvas_el.getContext("2d"),
+            
             layers = [],
             
             hover_layer    = -1,
@@ -75,82 +76,12 @@
                 
                 dim = {
                     width:  test_el.offsetWidth,
-                    height: test_el.offsetHeight,
+                    height: test_el.offsetHeight
                 };
                 
                 test_el.style.display = "none";
                 
                 return dim;
-            };
-        }());
-        
-        
-        text_manager = (function ()
-        {
-            var is_visible = false,
-                text_el = document.createElement("textarea");
-            
-            text_el.style.display    = "none";
-            text_el.style.outline    = "1px dashed rgba(0, 0, 0, .3)";
-            text_el.style.padding    = "0";
-            text_el.style.border     = "0";
-            text_el.style.margin     = "0";
-            text_el.style.position   = "absolute";
-            text_el.style.background = "#FFF";
-            
-            text_el.onmousedown = function (e)
-            {
-                e.stopPropagation();
-            }
-            
-            document.body.appendChild(text_el);
-            
-            return {
-                edit_text: function (cur_layer)
-                {
-                    window.setTimeout(function ()
-                    {
-                        text_el.value = cur_layer.text;
-                        text_el.style.left = ((cur_layer.x + canvas_el.offsetLeft) - 1) + "px";
-                        text_el.style.top  = ((cur_layer.y + canvas_el.offsetTop)  - (parseInt(cur_layer.font_size) * 0.15)) + "px";
-                        
-                        text_el.style.width  = cur_layer.width  + "px";
-                        text_el.style.height = cur_layer.height + "px";
-                        
-                        text_el.style.fontFamily = cur_layer.font_family;
-                        text_el.style.fontSize   = cur_layer.font_size;
-                        text_el.style.color      = cur_layer.font_color;
-                        
-                        text_el.style.transform       = "rotate(" + cur_layer.angle + "rad)";
-                        text_el.style.MozTransform    = "rotate(" + cur_layer.angle + "rad)";
-                        text_el.style.OTransform      = "rotate(" + cur_layer.angle + "rad)";
-                        text_el.style.WebkitTransform = "rotate(" + cur_layer.angle + "rad)";
-                        text_el.style.MsTransform     = "rotate(" + cur_layer.angle + "rad)";
-                        
-                        text_el.onchange = function ()
-                        {
-                            cur_layer.text = text_el.value;
-                        };
-                        
-                        text_el.onkeyup = text_el.onchange;
-                        text_el.onblur  = text_el.onchange;
-                        
-                        text_el.style.display = "inline";
-                        is_visible = true;
-                        
-                        text_el.focus();
-                    }, 0);
-                }, hide_text: function ()
-                {
-                    if (is_visible) {
-                        text_el.style.display  = "none";
-                        is_visible = false;
-                        
-                        resize_layer(cur_layer, false, {x: cur_layer.corner_points.x3, y: cur_layer.corner_points.y3}, {x1: "x3", y1: "y3", x2: "x4", y2: "y4", x3: "x1", y3: "y1", x4: "x2", y4: "y2"});
-                        
-                        window.setTimeout(redraw, 0);
-                    }
-                }
             };
         }());
         
@@ -322,7 +253,6 @@
             {
                 var cur_line      = "",
                     cur_word      = 0,
-                    cur_width     = 0,
                     cur_y         = starting_y,
                     dimensions    = {height: line_height},
                     longest_width = 0,
@@ -430,7 +360,7 @@
                 text_arr_len = text_arr.length;
                 
                 while (cur_line < text_arr_len) {
-                    dimensions = draw_line(cur_layer, text_arr[cur_line], starting_x, height + starting_y, style, max_width, dont_draw, dimensions.line_height, starting_y)
+                    dimensions = draw_line(cur_layer, text_arr[cur_line], starting_x, height + starting_y, style, max_width, dont_draw, dimensions.line_height, starting_y);
                     height += dimensions.height;
                     if (dimensions.width > longest_width) {
                         longest_width = dimensions.width;
@@ -442,7 +372,7 @@
                 }
                 
                 return {height: height, width: longest_width, min_width: min_width};
-            }
+            };
         }());
         
         function redraw()
@@ -523,6 +453,79 @@
                 draw_decoration(layers[selected_layer]);
             }
         }
+        
+        text_manager = (function ()
+        {
+            var editing_layer,
+                is_visible = false,
+                text_el = document.createElement("textarea");
+            
+            text_el.style.display    = "none";
+            text_el.style.outline    = "1px dashed rgba(0, 0, 0, .3)";
+            text_el.style.padding    = "0";
+            text_el.style.border     = "0";
+            text_el.style.margin     = "0";
+            text_el.style.position   = "absolute";
+            text_el.style.background = "#FFF";
+            
+            text_el.onmousedown = function (e)
+            {
+                e.stopPropagation();
+            };
+            
+            document.body.appendChild(text_el);
+            
+            return {
+                edit_text: function (cur_layer)
+                {
+                    editing_layer = cur_layer;
+                    
+                    window.setTimeout(function ()
+                    {
+                        text_el.value = cur_layer.text;
+                        text_el.style.left = ((cur_layer.x + canvas_el.offsetLeft) - 1) + "px";
+                        text_el.style.top  = ((cur_layer.y + canvas_el.offsetTop)  - (parseInt(cur_layer.font_size, 10) * 0.15)) + "px";
+                        
+                        text_el.style.width  = cur_layer.width  + "px";
+                        text_el.style.height = cur_layer.height + "px";
+                        
+                        text_el.style.fontFamily = cur_layer.font_family;
+                        text_el.style.fontSize   = cur_layer.font_size;
+                        text_el.style.color      = cur_layer.font_color;
+                        
+                        text_el.style.transform       = "rotate(" + cur_layer.angle + "rad)";
+                        text_el.style.MozTransform    = "rotate(" + cur_layer.angle + "rad)";
+                        text_el.style.OTransform      = "rotate(" + cur_layer.angle + "rad)";
+                        text_el.style.WebkitTransform = "rotate(" + cur_layer.angle + "rad)";
+                        text_el.style.MsTransform     = "rotate(" + cur_layer.angle + "rad)";
+                        
+                        text_el.onchange = function ()
+                        {
+                            cur_layer.text = text_el.value;
+                        };
+                        
+                        text_el.onkeyup = text_el.onchange;
+                        text_el.onblur  = text_el.onchange;
+                        
+                        text_el.style.display = "inline";
+                        is_visible = true;
+                        
+                        text_el.focus();
+                    }, 0);
+                },
+                hide_text: function ()
+                {
+                    if (is_visible) {
+                        text_el.style.display  = "none";
+                        is_visible = false;
+                        
+                        resize_layer(editing_layer, false, {x: editing_layer.corner_points.x3, y: editing_layer.corner_points.y3}, {x1: "x3", y1: "y3", x2: "x4", y2: "y4", x3: "x1", y3: "y1", x4: "x2", y4: "y2"});
+                        
+                        window.setTimeout(redraw, 0);
+                    }
+                }
+            };
+        }());
         
         function create_new_layer(type, img, x, y, text)
         {
@@ -609,7 +612,7 @@
                 
         
         function rotate(cur_layer, angle)
-        {            
+        {
             cur_layer.angle = angle;
             
             cur_layer.corner_points = rotate_rect(angle, cur_layer.x, cur_layer.y, cur_layer.width, cur_layer.height);
@@ -727,12 +730,12 @@
                 return function (cur_pos)
                 {
                     var corners,
+                        cur_layer,
                         cur_layer_corner,
                         cur_layer_dec,
                         cur_x = cur_pos.x,
                         cur_y = cur_pos.y,
                         i;
-                    
                     
                     /// First, check to see if the cursor is hovering over a decoration.
                     if (selected_layer >= 0) {
@@ -819,8 +822,7 @@
                 var decoration_angle,
                     radian_45  = PI / 4,
                     radian_90  = PI / 2,
-                    radian_135 = radian_45 + radian_90,
-                    radian_180 = PI;
+                    radian_135 = radian_45 + radian_90;
                 
                 decoration_angle = layers[selected_layer].angle + ((which_decoration == "ul") ? radian_45 : (which_decoration == "ur") ? radian_135 : (which_decoration == "br") ? -radian_135 : -radian_45);
                 
@@ -888,9 +890,9 @@
                 }
                 
                 /**
-                    * Check to see if the user is trying to resize the element too far to where it would be inverted and optionally check the aspect ratio.
-                    */
-                function check_dimensions(angle, new_pos, opposite_pos, should_x1_be_less, should_y1_be_less, keep_aspect_ratio, aspect_ratio, is_textbox)
+                 * Check to see if the user is trying to resize the element too far to where it would be inverted and optionally check the aspect ratio.
+                 */
+                function check_dimensions(angle, new_pos, opposite_pos, should_x1_be_less, should_y1_be_less, keep_aspect_ratio, aspect_ratio, is_textbox, cur_layer)
                 {
                     var center_x = (new_pos.x + opposite_pos.x) / 2,
                         center_y = (new_pos.y + opposite_pos.y) / 2,
@@ -915,7 +917,9 @@
                         y3_rel = Math.round((opposite_pos.y - center_y) * 100) / 100,
                         
                         change_x = false,
-                        change_y = false;
+                        change_y = false,
+                        
+                        min_dimensions;
                     
                     /// Unrotate the points.
                     x1 = Math.round((neg_cosine * x1_rel - neg_sine   * y1_rel) * 100) / 100;
@@ -944,8 +948,6 @@
                     }
                     
                     if (is_textbox) {
-                        var min_dimensions;
-                        
                         context.save();
                         context.textBaseline = "top";
                         context.font = cur_layer.canvas_font;
@@ -1009,7 +1011,7 @@
                     var opposite_points,
                         unrotated_x_y;
                     
-                    check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x4"), (points.y1 == "y1" || points.y1 == "y2"), keep_aspect_ratio, cur_layer.aspect_ratio, cur_layer.type === "text");
+                    check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x4"), (points.y1 == "y1" || points.y1 == "y2"), keep_aspect_ratio, cur_layer.aspect_ratio, cur_layer.type == "text", cur_layer);
                     
                     opposite_points = get_opposite_points(cur_layer.angle, new_pos.x, new_pos.y, cur_layer.corner_points[points.x3], cur_layer.corner_points[points.y3]);
                     
@@ -1069,7 +1071,7 @@
                     if (snap) {
                         if (angle > -0.3927 && angle < 0.3927) {
                             angle = 0;         /// 0°
-                        } else if (angle >= .3927 && angle < 1.178) {
+                        } else if (angle >= 0.3927 && angle < 1.178) {
                             angle = 0.785398;  /// 45°
                         } else if (angle >= 1.178 && angle < 1.9634) {
                             angle = 1.570796;  /// 90°
@@ -1078,7 +1080,7 @@
                         } else if ((angle >= 2.7488 && angle < 3.5342) || (angle <= -2.7488 && angle > -3.5342)) {
                             ///NOTE: 180° == -180°
                             angle = PI;        /// 180°
-                        } else if (angle <= -.3927 && angle > -1.178) {
+                        } else if (angle <= -0.3927 && angle > -1.178) {
                             angle = -0.785398; /// -45°
                         } else if (angle <= -1.178 && angle > -1.9634) {
                             angle = -1.570796; /// -90°
@@ -1099,9 +1101,6 @@
                         tmp_layer,
                         x_move_amt,
                         y_move_amt,
-                        
-                        new_width,
-                        new_height,
                         
                         keep_aspect_ratio,
                         shift_down = e.shiftKey;
@@ -1214,7 +1213,7 @@
                         set_decoration_cursor(layers[selected_layer], tmp_layer);
                     } else {
                         /// Make a rotate cursor image.
-                        layer_starting_angle = layers[selected_layer].angle
+                        layer_starting_angle = layers[selected_layer].angle;
                     }
                     
                     mouse_starting_x = cur_pos.x;
@@ -1319,18 +1318,28 @@
                         while (old_count < layers_len) {
                             if (downward && old_count === new_pos) {
                                 new_layers[new_count] = layers[which_layer];
+                                if (which_layer === selected_layer) {
+                                    selected_layer = new_count;
+                                }
                                 ++new_count;
                             }
                             
                             if (old_count !== which_layer) {
                                 new_layers[new_count] = layers[old_count];
+                                if (which_layer === selected_layer) {
+                                    selected_layer = new_count;
+                                }
                                 ++new_count;
                             }
                             
                             if (!downward && old_count === new_pos) {
                                 new_layers[new_count] = layers[which_layer];
+                                if (which_layer === selected_layer) {
+                                    selected_layer = new_count;
+                                }
                                 ++new_count;
                             }
+                            
                             ++old_count;
                         }
                         
@@ -1432,7 +1441,7 @@
                             {
                                 var new_layer = create_new_layer("text", null, pos.x, pos.y, "Enter Text");
                                 layers[layers.length] = new_layer;
-                                redraw();
+                                ///NOTE: Since the page will be redrawn after editing, we do not need to redraw now.
                                 text_manager.edit_text(new_layer);
                             });
                         }
@@ -1479,7 +1488,7 @@
                 menu_manager.hide_menu();
                 
                 text_manager.hide_text();
-            }
+            };
         }());
         
         return {
@@ -1492,7 +1501,7 @@
     function handleReadernotification(e)
     {
         if (e.lengthComputable) {
-            /// Percent = e.loaded / e.total;
+            document.title = "Scrapbook (" + (e.loaded / e.total) + ")";
         }
     }
     
@@ -1541,6 +1550,7 @@
                 if (i < count) {
                     read_file();
                 }
+                document.title = "Scrapbook";
             };
             
             /// Begin reading in files.
