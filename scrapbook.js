@@ -35,6 +35,7 @@
             draw_wrapped_text,
             get_text_dimensions,
             menu_manager,
+            resize_layer,
             text_manager,
             
             /// Misc
@@ -83,22 +84,6 @@
             };
         }());
         
-        function check_textbox_dimensions(cur_layer, which_decoration)
-        {
-            var min_dimensions;
-            
-            context.save();
-            context.textBaseline = "top";
-            context.font = cur_layer.canvas_font;
-            context.fillStyle = cur_layer.font_color;
-            
-            min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width, true);
-            context.restore();
-            
-            //if (cur_layer.width < min_dimensions.width) {
-                //cur_layer.width = min_dimensions.width;
-            //}
-        }
         
         text_manager = (function ()
         {
@@ -161,7 +146,7 @@
                         text_el.style.display  = "none";
                         is_visible = false;
                         
-                        check_textbox_dimensions(cur_layer);
+                        resize_layer(cur_layer, false, {x: cur_layer.corner_points.x3, y: cur_layer.corner_points.y3}, {x1: "x3", y1: "y3", x2: "x4", y2: "y4", x3: "x1", y3: "y1", x4: "x2", y4: "y2"});
                         
                         window.setTimeout(redraw, 0);
                     }
@@ -832,201 +817,197 @@
                 }
             }
             
-            canvas_el.onmousemove = (function ()
+            
+            resize_layer = (function ()
             {
-                var resize_layer = (function ()
+                function get_opposite_points(angle, x1, y1, x3, y3)
                 {
-                    function get_opposite_points(angle, x1, y1, x3, y3)
-                    {
-                        var cosine = Math.cos(-angle),
-                            cos2,
-                            sincos,
-                            sine   = Math.sin(-angle),
-                            sin2;
-                        
-                        cos2   = Math.pow(cosine, 2);
-                        sin2   = Math.pow(sine,   2);
-                        sincos = sine * cosine;
-                        
-                        return {
-                            x2: x1 * sin2 + x3 * cos2 + (y1 - y3) * sincos,
-                            y2: y3 * sin2 + y1 * cos2 + (x1 - x3) * sincos,
-                            
-                            x4: x3 * sin2 + x1 * cos2 + (y3 - y1) * sincos,
-                            y4: y1 * sin2 + y3 * cos2 + (x3 - x1) * sincos
-                        };
-                    }
+                    var cosine = Math.cos(-angle),
+                        cos2,
+                        sincos,
+                        sine   = Math.sin(-angle),
+                        sin2;
                     
-                    function find_x_y_before_rotation(angle, x1, y1, x3, y3)
-                    {
-                        var center_x = (x1 + x3) / 2,
-                            center_y = (y1 + y3) / 2,
-                            x,
-                            y,
-                            
-                            neg_cosine = Math.cos(-angle),
-                            neg_sine   = Math.sin(-angle);
+                    cos2   = Math.pow(cosine, 2);
+                    sin2   = Math.pow(sine,   2);
+                    sincos = sine * cosine;
+                    
+                    return {
+                        x2: x1 * sin2 + x3 * cos2 + (y1 - y3) * sincos,
+                        y2: y3 * sin2 + y1 * cos2 + (x1 - x3) * sincos,
+                        
+                        x4: x3 * sin2 + x1 * cos2 + (y3 - y1) * sincos,
+                        y4: y1 * sin2 + y3 * cos2 + (x3 - x1) * sincos
+                    };
+                }
+                
+                function find_x_y_before_rotation(angle, x1, y1, x3, y3)
+                {
+                    var center_x = (x1 + x3) / 2,
+                        center_y = (y1 + y3) / 2,
+                        x,
+                        y,
+                        
+                        neg_cosine = Math.cos(-angle),
+                        neg_sine   = Math.sin(-angle);
+                    
+                    /// Get points relative to the center of the rectangle.
+                    x = x1 - center_x;
+                    y = y1 - center_y;
+                    
+                    return {
+                        x: Math.round(((neg_cosine * x - neg_sine   * y) + center_x) * 100) / 100,
+                        y: Math.round(((neg_sine   * x + neg_cosine * y) + center_y) * 100) / 100
+                    };
+                }
+                
+                /**
+                    * Check to see if the user is trying to resize the element too far to where it would be inverted and optionally check the aspect ratio.
+                    */
+                function check_dimensions(angle, new_pos, opposite_pos, should_x1_be_less, should_y1_be_less, keep_aspect_ratio, aspect_ratio, is_textbox)
+                {
+                    var center_x = (new_pos.x + opposite_pos.x) / 2,
+                        center_y = (new_pos.y + opposite_pos.y) / 2,
+                        
+                        cosine = Math.cos(angle),
+                        sine   = Math.sin(angle),
+                        
+                        neg_cosine = Math.cos(-angle),
+                        neg_sine   = Math.sin(-angle),
+                        
+                        x1,
+                        y1,
+                        
+                        x3,
+                        y3,
                         
                         /// Get points relative to the center of the rectangle.
-                        x = x1 - center_x;
-                        y = y1 - center_y;
+                        x1_rel = Math.round((new_pos.x - center_x) * 100) / 100,
+                        y1_rel = Math.round((new_pos.y - center_y) * 100) / 100,
                         
-                        return {
-                            x: Math.round(((neg_cosine * x - neg_sine   * y) + center_x) * 100) / 100,
-                            y: Math.round(((neg_sine   * x + neg_cosine * y) + center_y) * 100) / 100
-                        };
+                        x3_rel = Math.round((opposite_pos.x - center_x) * 100) / 100,
+                        y3_rel = Math.round((opposite_pos.y - center_y) * 100) / 100,
+                        
+                        change_x = false,
+                        change_y = false;
+                    
+                    /// Unrotate the points.
+                    x1 = Math.round((neg_cosine * x1_rel - neg_sine   * y1_rel) * 100) / 100;
+                    y1 = Math.round((neg_sine   * x1_rel + neg_cosine * y1_rel) * 100) / 100;
+                    
+                    x3 = Math.round((neg_cosine * x3_rel - neg_sine   * y3_rel) * 100) / 100;
+                    y3 = Math.round((neg_sine   * x3_rel + neg_cosine * y3_rel) * 100) / 100;
+                    
+                    
+                    /// Check X
+                    if (should_x1_be_less && x1 > x3) {
+                        x1 = x3 - 1;
+                        change_x = true;
+                    } else if (!should_x1_be_less && x1 < x3) {
+                        x1 = x3 + 1;
+                        change_x = true;
                     }
                     
-                    /**
-                     * Check to see if the user is trying to resize the element too far to where it would be inverted and optionally check the aspect ratio.
-                     */
-                    function check_dimensions(angle, new_pos, opposite_pos, should_x1_be_less, should_y1_be_less, keep_aspect_ratio, aspect_ratio, is_textbox)
-                    {
-                        var center_x = (new_pos.x + opposite_pos.x) / 2,
-                            center_y = (new_pos.y + opposite_pos.y) / 2,
-                            
-                            cosine = Math.cos(angle),
-                            sine   = Math.sin(angle),
-                            
-                            neg_cosine = Math.cos(-angle),
-                            neg_sine   = Math.sin(-angle),
-                            
-                            x1,
-                            y1,
-                            
-                            x3,
-                            y3,
-                            
-                            /// Get points relative to the center of the rectangle.
-                            x1_rel = Math.round((new_pos.x - center_x) * 100) / 100,
-                            y1_rel = Math.round((new_pos.y - center_y) * 100) / 100,
-                            
-                            x3_rel = Math.round((opposite_pos.x - center_x) * 100) / 100,
-                            y3_rel = Math.round((opposite_pos.y - center_y) * 100) / 100,
-                            
-                            change_x = false,
-                            change_y = false;
+                    /// Check Y
+                    if (should_y1_be_less && y1 > y3) {
+                        y1 = y3 - 1;
+                        change_y = true;
+                    } else if (!should_y1_be_less && y1 < y3) {
+                        y1 = y3 + 1;
+                        change_y = true;
+                    }
+                    
+                    if (is_textbox) {
+                        var min_dimensions;
                         
-                        /// Unrotate the points.
-                        x1 = Math.round((neg_cosine * x1_rel - neg_sine   * y1_rel) * 100) / 100;
-                        y1 = Math.round((neg_sine   * x1_rel + neg_cosine * y1_rel) * 100) / 100;
+                        context.save();
+                        context.textBaseline = "top";
+                        context.font = cur_layer.canvas_font;
+                        context.fillStyle = cur_layer.font_color;
                         
-                        x3 = Math.round((neg_cosine * x3_rel - neg_sine   * y3_rel) * 100) / 100;
-                        y3 = Math.round((neg_sine   * x3_rel + neg_cosine * y3_rel) * 100) / 100;
-                        
+                        min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width, true);
+                        context.restore();
                         
                         /// Check X
-                        if (should_x1_be_less && x1 > x3) {
-                            x1 = x3 - 1;
+                        if (should_x1_be_less && x3 - x1 < min_dimensions.min_width) {
+                            x1 = x3 - min_dimensions.min_width;
                             change_x = true;
-                        } else if (!should_x1_be_less && x1 < x3) {
-                            x1 = x3 + 1;
+                        } else if (!should_x1_be_less && x1 - x3 < min_dimensions.min_width) {
+                            x1 = x3 + min_dimensions.min_width;
                             change_x = true;
                         }
                         
                         /// Check Y
-                        if (should_y1_be_less && y1 > y3) {
-                            y1 = y3 - 1;
+                        if (should_y1_be_less && y3 - y1 < min_dimensions.height) {
+                            y1 = y3 - min_dimensions.height;
                             change_y = true;
-                        } else if (!should_y1_be_less && y1 < y3) {
-                            y1 = y3 + 1;
+                        } else if (!should_y1_be_less && y1 - y3 < min_dimensions.height) {
+                            y1 = y3 + min_dimensions.height;
                             change_y = true;
-                        }
-                        
-                        if (is_textbox) {
-                            var min_dimensions;
-                            
-                            context.save();
-                            context.textBaseline = "top";
-                            context.font = cur_layer.canvas_font;
-                            context.fillStyle = cur_layer.font_color;
-                            
-                            min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width, true);
-                            context.restore();
-                            
-                            /// Check X
-                            if (should_x1_be_less && x3 - x1 < min_dimensions.min_width) {
-                                x1 = x3 - min_dimensions.min_width;
-                                change_x = true;
-                            } else if (!should_x1_be_less && x1 - x3 < min_dimensions.min_width) {
-                                x1 = x3 + min_dimensions.min_width;
-                                change_x = true;
-                            }
-                            
-                            /// Check Y
-                            if (should_y1_be_less && y3 - y1 < min_dimensions.height) {
-                                y1 = y3 - min_dimensions.height;
-                                change_y = true;
-                            } else if (!should_y1_be_less && y1 - y3 < min_dimensions.height) {
-                                y1 = y3 + min_dimensions.height;
-                                change_y = true;
-                            }
-                        }
-                        
-                        if (keep_aspect_ratio) {
-                            /// Is the width bigger?
-                            if (aspect_ratio > 1) {
-                                /// UL and BR
-                                if (should_x1_be_less === should_y1_be_less) {
-                                    y1 = ((x1 - x3) / aspect_ratio) + y3;
-                                /// UR and BL
-                                } else {
-                                    y1 = ((x3 - x1) / aspect_ratio) + y3;
-                                }
-                                change_y = true;
-                            } else {
-                                /// UL and BR
-                                if (should_x1_be_less === should_y1_be_less) {
-                                    x1 = ((y1 - y3) * aspect_ratio) + x3;
-                                /// UR and BL
-                                } else {
-                                    x1 = ((y3 - y1) * aspect_ratio) + x3;
-                                }
-                                change_x = true;
-                            }
-                        }
-                                                
-                        if (change_x || change_y) {
-                            /// Rotate new points.
-                            new_pos.x = Math.round(((cosine * x1 - sine   * y1) + center_x) * 100) / 100;
-                            new_pos.y = Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100;
                         }
                     }
                     
-                    
-                    return function (cur_layer, keep_aspect_ratio, new_pos, points)
-                    {
-                        var opposite_points,
-                            unrotated_x_y;
-                        
-                        check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x4"), (points.y1 == "y1" || points.y1 == "y2"), keep_aspect_ratio, cur_layer.aspect_ratio, cur_layer.type === "text");
-                        
-                        if (cur_layer.type == "text") {
-                            check_textbox_dimensions(cur_layer);
+                    if (keep_aspect_ratio) {
+                        /// Is the width bigger?
+                        if (aspect_ratio > 1) {
+                            /// UL and BR
+                            if (should_x1_be_less === should_y1_be_less) {
+                                y1 = ((x1 - x3) / aspect_ratio) + y3;
+                            /// UR and BL
+                            } else {
+                                y1 = ((x3 - x1) / aspect_ratio) + y3;
+                            }
+                            change_y = true;
+                        } else {
+                            /// UL and BR
+                            if (should_x1_be_less === should_y1_be_less) {
+                                x1 = ((y1 - y3) * aspect_ratio) + x3;
+                            /// UR and BL
+                            } else {
+                                x1 = ((y3 - y1) * aspect_ratio) + x3;
+                            }
+                            change_x = true;
                         }
-                                                
-                        opposite_points = get_opposite_points(cur_layer.angle, new_pos.x, new_pos.y, cur_layer.corner_points[points.x3], cur_layer.corner_points[points.y3]);
-                        
-                        cur_layer.corner_points[points.x1] = new_pos.x;
-                        cur_layer.corner_points[points.y1] = new_pos.y;
-                        
-                        cur_layer.corner_points[points.x2] = opposite_points.x2;
-                        cur_layer.corner_points[points.y2] = opposite_points.y2;
-                        
-                        cur_layer.corner_points[points.x4] = opposite_points.x4;
-                        cur_layer.corner_points[points.y4] = opposite_points.y4;
-                        
-                        unrotated_x_y = find_x_y_before_rotation(cur_layer.angle, cur_layer.corner_points.x1, cur_layer.corner_points.y1, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
-                        
-                        cur_layer.x = unrotated_x_y.x;
-                        cur_layer.y = unrotated_x_y.y;
-                        
-                        cur_layer.width  = Math.sqrt(Math.pow(cur_layer.corner_points.x2 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y2 - cur_layer.corner_points.y1, 2));
-                        cur_layer.height = Math.sqrt(Math.pow(cur_layer.corner_points.x4 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y4 - cur_layer.corner_points.y1, 2));
-                    };
-                }());
+                    }
+                                            
+                    if (change_x || change_y) {
+                        /// Rotate new points.
+                        new_pos.x = Math.round(((cosine * x1 - sine   * y1) + center_x) * 100) / 100;
+                        new_pos.y = Math.round(((sine   * x1 + cosine * y1) + center_y) * 100) / 100;
+                    }
+                }
                 
                 
+                return function (cur_layer, keep_aspect_ratio, new_pos, points)
+                {
+                    var opposite_points,
+                        unrotated_x_y;
+                    
+                    check_dimensions(cur_layer.angle, new_pos, {x: cur_layer.corner_points[points.x3], y: cur_layer.corner_points[points.y3]}, (points.x1 == "x1" || points.x1 == "x4"), (points.y1 == "y1" || points.y1 == "y2"), keep_aspect_ratio, cur_layer.aspect_ratio, cur_layer.type === "text");
+                    
+                    opposite_points = get_opposite_points(cur_layer.angle, new_pos.x, new_pos.y, cur_layer.corner_points[points.x3], cur_layer.corner_points[points.y3]);
+                    
+                    cur_layer.corner_points[points.x1] = new_pos.x;
+                    cur_layer.corner_points[points.y1] = new_pos.y;
+                    
+                    cur_layer.corner_points[points.x2] = opposite_points.x2;
+                    cur_layer.corner_points[points.y2] = opposite_points.y2;
+                    
+                    cur_layer.corner_points[points.x4] = opposite_points.x4;
+                    cur_layer.corner_points[points.y4] = opposite_points.y4;
+                    
+                    unrotated_x_y = find_x_y_before_rotation(cur_layer.angle, cur_layer.corner_points.x1, cur_layer.corner_points.y1, cur_layer.corner_points.x3, cur_layer.corner_points.y3);
+                    
+                    cur_layer.x = unrotated_x_y.x;
+                    cur_layer.y = unrotated_x_y.y;
+                    
+                    cur_layer.width  = Math.sqrt(Math.pow(cur_layer.corner_points.x2 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y2 - cur_layer.corner_points.y1, 2));
+                    cur_layer.height = Math.sqrt(Math.pow(cur_layer.corner_points.x4 - cur_layer.corner_points.x1, 2) + Math.pow(cur_layer.corner_points.y4 - cur_layer.corner_points.y1, 2));
+                };
+            }());
+            
+            canvas_el.onmousemove = (function ()
+            {
                 function calculate_angle(orig_angle, p_start, p_new, p_center, snap)
                 {
                     var a,
