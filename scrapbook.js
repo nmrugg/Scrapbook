@@ -340,12 +340,12 @@
                     cur_width = 0,
                     cur_y    = starting_y,
                     dimensions = {},
-                    last_width = 0,
                     longest_width = 0,
                     min_width = 0,
                     potenial_line = "",
                     text_arr = text.split(/\s/),
-                    text_arr_len;
+                    text_arr_len,
+                    tmp_width;
                 
                 text_arr_len = text_arr.length;
                 
@@ -379,8 +379,10 @@
                         cur_line = text_arr[cur_word];
                         potenial_line = cur_line;
                         
-                        if (dimensions.width - last_width > min_width) {
-                            min_width = dimensions.width - last_width;
+                        /// To figure out the minium width, measure the first word at the beginning of each line.
+                        tmp_width = dimensions.width = context.measureText(text_arr[cur_word]).width;
+                        if (tmp_width > min_width) {
+                            min_width = tmp_width;
                         }
                     } else {
                         cur_line = potenial_line;
@@ -388,8 +390,6 @@
                         if (dimensions.width > longest_width) {
                             longest_width = dimensions.width;
                         }
-                        
-                        last_width = dimensions.width;
                     }
                     
                     ++cur_word;
@@ -401,10 +401,6 @@
                 }
                 
                 cur_y += dimensions.height;
-                
-                if (last_width - dimensions.width > min_width) {
-                    min_width = last_width - dimensions.width;
-                }
                 
                 return {height: cur_y - starting_y, width: longest_width, min_width: min_width};
             }
@@ -946,7 +942,7 @@
                             
                             min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width, true);
                             context.restore();
-                            //document.title = "min-w:" + min_dimensions.min_width + " h:" + min_dimensions.height + " w:" + min_dimensions.width;
+                            
                             /// Check X
                             if (should_x1_be_less && x3 - x1 < min_dimensions.min_width) {
                                 x1 = x3 - min_dimensions.min_width;
