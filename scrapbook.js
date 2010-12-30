@@ -264,6 +264,16 @@
                 
                 text_arr_len = text_arr.length;
                 
+                function handle_drawing() {
+                    if (!dont_draw && cur_line !== "") {
+                        context.fillText(cur_line, starting_x, cur_y);
+                        /// Cache lines so that we don't need to do this again until the text box or text has been changed.
+                        cur_layer.text_lines[cur_layer.text_lines.length] = {text: cur_line, x: 0, y: cur_y - original_y};
+                    }
+                    
+                    cur_y += dimensions.height;
+                }
+                
                 while (cur_word < text_arr_len) {
                     /// Allow for double spaces.
                     ///BUG: This seems to insert two spaces.
@@ -285,14 +295,7 @@
                     
                     ///NOTE: cur_line !== "" prevents breaking before the first word.
                     if (dimensions.width > max_width && cur_line !== "") {
-                        if (!dont_draw) {
-                            context.fillText(cur_line, starting_x, cur_y);
-                            /// Cache lines so that we don't need to do this again until the text box or text has been changed.
-                            cur_layer.text_lines[cur_layer.text_lines.length] = {text: cur_line, x: 0, y: cur_y - original_y};
-                        }
-                        
-                        
-                        cur_y += dimensions.height;
+                        handle_drawing();
                         
                         cur_line = text_arr[cur_word];
                         potenial_line = cur_line;
@@ -313,13 +316,8 @@
                     ++cur_word;
                 }
                 
-                if (!dont_draw && cur_line !== "") {
-                    ///NOTE: The last line has to be draw after the loop.
-                    context.fillText(cur_line, starting_x, cur_y);
-                    cur_layer.text_lines[cur_layer.text_lines.length] = {text: cur_line, x: 0, y: cur_y - original_y};
-                }
-                
-                cur_y += dimensions.height;
+                ///NOTE: The last line has to be draw after the loop.
+                handle_drawing();
                 
                 /// Send line height so that it can be sent back so that get_text_dimensions() does not have to run again because it is slow.
                 return {height: cur_y - starting_y, width: longest_width, min_width: min_width, line_height: dimensions.height};
