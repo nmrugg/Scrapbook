@@ -94,7 +94,7 @@
             
             min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width, true);
             context.restore();
-            //document.title = "w:" + min_dimensions.width + " h:" + min_dimensions.height;
+            
             //if (cur_layer.width < min_dimensions.width) {
                 //cur_layer.width = min_dimensions.width;
             //}
@@ -340,6 +340,7 @@
                     cur_width = 0,
                     cur_y    = starting_y,
                     dimensions = {},
+                    last_width = 0,
                     longest_width = 0,
                     min_width = 0,
                     potenial_line = "",
@@ -363,6 +364,10 @@
                         dimensions.width = context.measureText(potenial_line).width;
                     }
                     
+                    if (cur_word === 0) {
+                        min_width = dimensions.width;
+                    }
+                    
                     ///NOTE: cur_line !== "" prevents breaking before the first word.
                     if (dimensions.width > max_width && cur_line !== "") {
                         if (!dont_draw) {
@@ -373,12 +378,18 @@
                         
                         cur_line = text_arr[cur_word];
                         potenial_line = cur_line;
+                        
+                        if (dimensions.width - last_width > min_width) {
+                            min_width = dimensions.width - last_width;
+                        }
                     } else {
                         cur_line = potenial_line;
-                    }
-                    
-                    if (dimensions.width > longest_width) {
-                        longest_width = dimensions.width;
+                        
+                        if (dimensions.width > longest_width) {
+                            longest_width = dimensions.width;
+                        }
+                        
+                        last_width = dimensions.width;
                     }
                     
                     ++cur_word;
@@ -390,6 +401,10 @@
                 }
                 
                 cur_y += dimensions.height;
+                
+                if (last_width - dimensions.width > min_width) {
+                    min_width = last_width - dimensions.width;
+                }
                 
                 return {height: cur_y - starting_y, width: longest_width, min_width: min_width};
             }
@@ -477,7 +492,6 @@
                     /// Draw text starting from the upper left corner.
                     context.textBaseline = "top";
                     context.font = cur_layer.canvas_font;
-                    document.title = context.font;
                     context.fillStyle = cur_layer.font_color;
                     
                     if (cur_layer.angle !== 0) {
@@ -1244,7 +1258,11 @@
             {
                 /// Since onmousedown already fired, the layer is selected already.
                 if (selected_layer >= 0) {
-                    switch_decoration();
+                    if (layers[selected_layer].type == "text") {
+                        text_manager.edit_text(layers[selected_layer]);
+                    } else {
+                        switch_decoration();
+                    }
                     redraw();
                 }
             };
