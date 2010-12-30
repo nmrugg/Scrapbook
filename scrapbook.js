@@ -946,7 +946,7 @@
                             
                             min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width, true);
                             context.restore();
-                            document.title = "min-w:" + min_dimensions.min_width + " h:" + min_dimensions.height + " w:" + min_dimensions.width;
+                            //document.title = "min-w:" + min_dimensions.min_width + " h:" + min_dimensions.height + " w:" + min_dimensions.width;
                             /// Check X
                             if (should_x1_be_less && x3 - x1 < min_dimensions.min_width) {
                                 x1 = x3 - min_dimensions.min_width;
@@ -954,6 +954,15 @@
                             } else if (!should_x1_be_less && x1 - x3 < min_dimensions.min_width) {
                                 x1 = x3 + min_dimensions.min_width;
                                 change_x = true;
+                            }
+                            
+                            /// Check Y
+                            if (should_y1_be_less && y3 - y1 < min_dimensions.height) {
+                                y1 = y3 - min_dimensions.height;
+                                change_y = true;
+                            } else if (!should_y1_be_less && y1 - y3 < min_dimensions.height) {
+                                y1 = y3 + min_dimensions.height;
+                                change_y = true;
                             }
                         }
                         
