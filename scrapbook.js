@@ -318,7 +318,7 @@
         
         draw_wrapped_text = (function ()
         {
-            function draw_line(text, starting_x, starting_y, style, max_width, dont_draw, line_height)
+            function draw_line(cur_layer, text, starting_x, starting_y, style, max_width, dont_draw, line_height, original_y)
             {
                 var cur_line      = "",
                     cur_word      = 0,
@@ -357,7 +357,10 @@
                     if (dimensions.width > max_width && cur_line !== "") {
                         if (!dont_draw) {
                             context.fillText(cur_line, starting_x, cur_y);
+                            /// Cache lines so that we don't need to do this again until the text box or text has been changed.
+                            cur_layer.text_lines[cur_layer.text_lines.length] = {text: cur_line, x: 0, y: cur_y - original_y};
                         }
+                        
                         
                         cur_y += dimensions.height;
                         
@@ -383,6 +386,7 @@
                 if (!dont_draw && cur_line !== "") {
                     ///NOTE: The last line has to be draw after the loop.
                     context.fillText(cur_line, starting_x, cur_y);
+                    cur_layer.text_lines[cur_layer.text_lines.length] = {text: cur_line, x: 0, y: cur_y - original_y};
                 }
                 
                 cur_y += dimensions.height;
@@ -391,7 +395,7 @@
                 return {height: cur_y - starting_y, width: longest_width, min_width: min_width, line_height: dimensions.height};
             }
             
-            return function (text, starting_x, starting_y, style, max_width, dont_draw)
+            return function (cur_layer, text, starting_x, starting_y, style, max_width, dont_draw)
             {
                 var cur_line = 0,
                     dimensions = {height: 0, line_height: null},
@@ -401,10 +405,32 @@
                     text_arr = text.split(/\n/),
                     text_arr_len;
                 
+                /// Is this a dry run?
+                if (dont_draw) {
+                    /// Dry runs always occur when the text has potentially been change, so we need to clear the cached lines.
+                    cur_layer.text_lines = null;
+                } else {
+                    /// Have the lines already been cached?
+                    if (cur_layer.text_lines) {
+                        text_arr_len = cur_layer.text_lines.length;
+                        
+                        while (cur_line < text_arr_len) {
+                            context.fillText(cur_layer.text_lines[cur_line].text, cur_layer.text_lines[cur_line].x + starting_x, cur_layer.text_lines[cur_line].y + starting_y);
+                            ++cur_line;
+                        }
+                        
+                        /// Since the lines were already cached, we can quite now.
+                        return;
+                    } else {
+                        /// This is the first non-dry run, so create a fresh new array to store the cached lines.
+                        cur_layer.text_lines = [];
+                    }
+                }
+                
                 text_arr_len = text_arr.length;
                 
                 while (cur_line < text_arr_len) {
-                    dimensions = draw_line(text_arr[cur_line], starting_x, height + starting_y, style, max_width, dont_draw, dimensions.line_height)
+                    dimensions = draw_line(cur_layer, text_arr[cur_line], starting_x, height + starting_y, style, max_width, dont_draw, dimensions.line_height, starting_y)
                     height += dimensions.height;
                     if (dimensions.width > longest_width) {
                         longest_width = dimensions.width;
@@ -480,10 +506,10 @@
                         context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
                         context.rotate(cur_layer.angle);
                         //context.fillText(cur_layer.text, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width);
-                        draw_wrapped_text(cur_layer.text, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.style_font, cur_layer.width);
+                        draw_wrapped_text(cur_layer, cur_layer.text, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.style_font, cur_layer.width);
                     } else {
                         //context.fillText(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.width);
-                        draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width);
+                        draw_wrapped_text(cur_layer, cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width);
                     }
                 }
                 
@@ -925,7 +951,7 @@
                         context.font = cur_layer.canvas_font;
                         context.fillStyle = cur_layer.font_color;
                         
-                        min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width, true);
+                        min_dimensions = draw_wrapped_text(cur_layer, cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width, true);
                         context.restore();
                         
                         /// Check X
