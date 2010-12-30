@@ -89,10 +89,10 @@
             
             context.save();
             context.textBaseline = "top";
-            context.font = cur_layer.font_size + " " + cur_layer.font_family;
+            context.font = cur_layer.canvas_font;
             context.fillStyle = cur_layer.font_color;
             
-            min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width, true);
+            min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width, true);
             context.restore();
             //document.title = "w:" + min_dimensions.width + " h:" + min_dimensions.height;
             //if (cur_layer.width < min_dimensions.width) {
@@ -476,17 +476,18 @@
                 } else {
                     /// Draw text starting from the upper left corner.
                     context.textBaseline = "top";
-                    context.font = cur_layer.font_size + " " + cur_layer.font_family;
+                    context.font = cur_layer.canvas_font;
+                    document.title = context.font;
                     context.fillStyle = cur_layer.font_color;
                     
                     if (cur_layer.angle !== 0) {
                         context.translate(cur_layer.x + (cur_layer.width / 2), cur_layer.y + (cur_layer.height / 2));
                         context.rotate(cur_layer.angle);
                         //context.fillText(cur_layer.text, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.width);
-                        draw_wrapped_text(cur_layer.text, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width);
+                        draw_wrapped_text(cur_layer.text, 0 - (cur_layer.width / 2), 0 - (cur_layer.height / 2), cur_layer.style_font, cur_layer.width);
                     } else {
                         //context.fillText(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.width);
-                        draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width);
+                        draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width);
                     }
                 }
                 
@@ -553,12 +554,15 @@
                 obj.font_color = "#FF0000";
                 obj.weight = "normal";
                 //obj.italics = "normal";
+                obj.canvas_font = obj.font_size + " " + obj.font_family;
+                obj.style_font  = "font-family:" + obj.font_family + ";font-size:" + obj.font_size + ";";
+                
                 obj.text = text;
                 context.save();
-                context.font = obj.font + " " + obj.font_size;
-                //alert(context.measureText(text).toSource());
-                //alert(context.measureText(text).width);
-                temp_obj = get_text_dimensions(text, "font-family:" + obj.font_family + ";font-size:" + obj.font_size + ";");
+                context.font = obj.canvas_font;
+                
+                
+                temp_obj = get_text_dimensions(text, obj.style_font);
                 obj.width  = temp_obj.width;
                 obj.height = temp_obj.height;
                 context.restore();
@@ -923,10 +927,10 @@
                             
                             context.save();
                             context.textBaseline = "top";
-                            context.font = cur_layer.font_size + " " + cur_layer.font_family;
+                            context.font = cur_layer.canvas_font;
                             context.fillStyle = cur_layer.font_color;
                             
-                            min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";", cur_layer.width, true);
+                            min_dimensions = draw_wrapped_text(cur_layer.text, cur_layer.x, cur_layer.y, cur_layer.style_font, cur_layer.width, true);
                             context.restore();
                             document.title = "min-w:" + min_dimensions.min_width + " h:" + min_dimensions.height + " w:" + min_dimensions.width;
                             /// Check X
