@@ -1408,30 +1408,31 @@
                         new_layers = [],
                         
                         new_count = 0,
-                        old_count = 0;
+                        old_count = 0,
+                        
+                        moved_selected = false;
                     
                     if (new_pos >= 0 && new_pos < layers_len) {
                         while (old_count < layers_len) {
                             if (downward && old_count === new_pos) {
                                 new_layers[new_count] = layers[which_layer];
-                                if (which_layer === selected_layer) {
+                                if (!moved_selected && which_layer === selected_layer) {
                                     selected_layer = new_count;
+                                    moved_selected = true
                                 }
                                 ++new_count;
                             }
                             
                             if (old_count !== which_layer) {
                                 new_layers[new_count] = layers[old_count];
-                                if (which_layer === selected_layer) {
-                                    selected_layer = new_count;
-                                }
                                 ++new_count;
                             }
                             
                             if (!downward && old_count === new_pos) {
                                 new_layers[new_count] = layers[which_layer];
-                                if (which_layer === selected_layer) {
+                                if (!moved_selected && which_layer === selected_layer) {
                                     selected_layer = new_count;
+                                    moved_selected = true
                                 }
                                 ++new_count;
                             }
