@@ -38,6 +38,7 @@
             menu_manager,
             resize_layer,
             text_manager,
+            toolbox_manager,
             
             /// Misc
             PI  = Math.PI,
