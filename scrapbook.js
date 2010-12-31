@@ -1445,6 +1445,26 @@
                             });
                         }
                         
+                        add_menu_item("View Image", function ()
+                        {
+                            var tmp_selected = selected_layer;
+                            
+                            /// Hide the decorations.
+                            if (tmp_selected != -1) {
+                                selected_layer = -1;
+                                redraw();
+                            }
+                            
+                            /// Create the image in a new tab.
+                            window.open(canvas_el.toDataURL("image/png"));
+                            
+                            /// Reselect the layer.
+                            if (tmp_selected != -1) {
+                                selected_layer = tmp_selected;
+                                redraw();
+                            }
+                        });
+                        
                         
                         menu_el.style.cssText = "display: block; position: absolute; left: " + (pos.x + canvas_el.offsetLeft) + "px; top: " + (pos.y + canvas_el.offsetTop) + "px;";
                     },
