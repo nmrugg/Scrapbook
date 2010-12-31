@@ -1537,30 +1537,33 @@
                             {
                                 var new_layer = create_new_layer("text", null, pos.x, pos.y, "Enter Text Here");
                                 layers[layers.length] = new_layer;
-                                ///NOTE: Since the page will be redrawn after editing, we do not need to redraw now.
+                                /// Redraw the page to get rid of the initial text and to show something there immediately after the textbox disappears.
+                                redraw();
                                 text_manager.edit_text(new_layer);
                             });
                         }
                         
-                        add_menu_item("View Image", function ()
-                        {
-                            var tmp_selected = selected_layer;
-                            
-                            /// Hide the decorations.
-                            if (tmp_selected != -1) {
-                                selected_layer = -1;
-                                redraw();
-                            }
-                            
-                            /// Create the image in a new tab.
-                            window.open(canvas_el.toDataURL("image/png"));
-                            
-                            /// Reselect the layer.
-                            if (tmp_selected != -1) {
-                                selected_layer = tmp_selected;
-                                redraw();
-                            }
-                        });
+                        if (layers.length > 0) {
+                            add_menu_item("View Image", function ()
+                            {
+                                var tmp_selected = selected_layer;
+                                
+                                /// Hide the decorations.
+                                if (tmp_selected != -1) {
+                                    selected_layer = -1;
+                                    redraw();
+                                }
+                                
+                                /// Create the image in a new tab.
+                                window.open(canvas_el.toDataURL("image/png"));
+                                
+                                /// Reselect the layer.
+                                if (tmp_selected != -1) {
+                                    selected_layer = tmp_selected;
+                                    redraw();
+                                }
+                            });
+                        }
                         
                         
                         menu_el.style.cssText = "display: block; position: absolute; left: " + (pos.x + canvas_el.offsetLeft) + "px; top: " + (pos.y + canvas_el.offsetTop) + "px;";
@@ -1606,6 +1609,34 @@
                 
                 text_manager.hide_text();
             };
+        }());
+        
+        
+        /// Display initial explaination.
+        (function ()
+        {
+            var dimensions1,
+                dimensions2,
+                font_size1 = "50",
+                font_size2 = "20",
+                text1 = "Drop Images Here",
+                text2 = "(right click to add text or get more options)";
+            
+            context.save();
+            context.textBaseline = "top";
+            context.font = font_size1 + "px sans";
+            context.fillStyle = "#000000";
+            dimensions1 = get_text_dimensions(text1, "font-family: sans;font-size: " + font_size1 + "px;")
+            context.fillText(text1, (canvas.width / 2) - (dimensions1.width / 2), (canvas.height / 2) - dimensions1.height);
+            context.restore();
+            
+            context.save();
+            context.textBaseline = "top";
+            context.font = font_size2 + "px sans";
+            context.fillStyle = "#000000";
+            dimensions2 = get_text_dimensions(text2, "font-family: sans;font-size: " + font_size2 + "px;")
+            context.fillText(text2, (canvas.width / 2) - (dimensions2.width / 2), ((canvas.height / 2) - dimensions2.height) + (dimensions1.height / 2));
+            context.restore();
         }());
         
         return {
@@ -1682,5 +1713,4 @@
     canvas_el.addEventListener("dragexit",  ignore_event, false);
     canvas_el.addEventListener("dragover",  ignore_event, false);
     canvas_el.addEventListener("drop",      drop,         false);
-    
 }());
