@@ -512,9 +512,11 @@
                         
                         create_input("Font Size", cur_layer.font_size, function ()
                         {
+                            var tmp_num = parseInt(this.value, 10);
                             cur_layer.font_size = this.value;
-                            if (cur_layer.font_size < 1) {
-                                cur_layer.font_size = 1;
+                            
+                            if (tmp_num < 1 || isNaN(tmp_num)) {
+                                cur_layer.font_size = "1px";
                             }
                             show_font_changes(cur_layer);
                         });
@@ -670,7 +672,7 @@
                 obj.aspect_ratio      = obj.orig_aspect_ratio;
             } else {
                 obj.font_family = "sans";
-                obj.font_size   = "18px";
+                obj.font_size   = "12pt";
                 obj.font_color  = "#000000";
                 ///TODO: Add weight, italics, text-decoration, etc.
                 //obj.weight = "normal";
