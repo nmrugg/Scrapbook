@@ -467,7 +467,7 @@
             {
                 /// Prevent the textarea from disappearing when the user clicks the toolbox.
                 e.stopPropagation();
-            }
+            };
             
             document.body.appendChild(toolbox);
             
@@ -513,7 +513,7 @@
                         create_input("Font Size", cur_layer.font_size, function ()
                         {
                             cur_layer.font_size = this.value;
-                            if (cur_layer.font_size == 0) {
+                            if (cur_layer.font_size < 1) {
                                 cur_layer.font_size = 1;
                             }
                             show_font_changes(cur_layer);
@@ -1626,7 +1626,7 @@
             context.textBaseline = "top";
             context.font = font_size1 + "px sans";
             context.fillStyle = "#000000";
-            dimensions1 = get_text_dimensions(text1, "font-family: sans;font-size: " + font_size1 + "px;")
+            dimensions1 = get_text_dimensions(text1, "font-family: sans;font-size: " + font_size1 + "px;");
             context.fillText(text1, (canvas.width / 2) - (dimensions1.width / 2), (canvas.height / 2) - dimensions1.height);
             context.restore();
             
@@ -1634,7 +1634,7 @@
             context.textBaseline = "top";
             context.font = font_size2 + "px sans";
             context.fillStyle = "#000000";
-            dimensions2 = get_text_dimensions(text2, "font-family: sans;font-size: " + font_size2 + "px;")
+            dimensions2 = get_text_dimensions(text2, "font-family: sans;font-size: " + font_size2 + "px;");
             context.fillText(text2, (canvas.width / 2) - (dimensions2.width / 2), ((canvas.height / 2) - dimensions2.height) + (dimensions1.height / 2));
             context.restore();
         }());
