@@ -452,6 +452,92 @@
             }
         }
         
+        
+        toolbox_manager = (function ()
+        {
+            var toolbox = document.createElement("menu");
+            
+            toolbox.style.display  = "none";
+            toolbox.style.position = "fixed";
+            toolbox.style.top      = "0px";
+            toolbox.style.left     = "0px";
+            
+            toolbox.onmousedown = function (e)
+            {
+                /// Prevent the textarea from disappearing when the user clicks the toolbox.
+                e.stopPropagation();
+            }
+            
+            document.body.appendChild(toolbox);
+            
+            function create_input(name, value, onchange, extra)
+            {
+                var input_el = document.createElement("input");
+                
+                input_el.type = "text";
+                input_el.value = value;
+                input_el.onchange  = onchange;
+                input_el.onkeyup   = onchange;
+                input_el.onmouseup = onchange;
+                
+                toolbox.appendChild(document.createTextNode(name + ":"));
+                toolbox.appendChild(document.createElement("br"));
+                toolbox.appendChild(input_el);
+                toolbox.appendChild(document.createElement("br"));
+            }
+            
+            function show_font_changes(cur_layer)
+            {
+                cur_layer.canvas_font = cur_layer.font_size + " " + cur_layer.font_family;
+                cur_layer.style_font  = "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";";
+                
+                text_manager.update_styles();
+            }
+            
+            return {
+                show: function (type, cur_layer)
+                {
+                    toolbox.innerHTML = "";
+                    
+                    if (type == "font") {
+                        create_input("Font Family", cur_layer.font_family, function ()
+                        {
+                            cur_layer.font_family = this.value;
+                            if (cur_layer.font_family.trim() === "") {
+                                cur_layer.font_family = "sans";
+                            }
+                            show_font_changes(cur_layer);
+                        });
+                        
+                        create_input("Font Size", cur_layer.font_size, function ()
+                        {
+                            cur_layer.font_size = this.value;
+                            if (cur_layer.font_size == 0) {
+                                cur_layer.font_size = 1;
+                            }
+                            show_font_changes(cur_layer);
+                        });
+                        
+                        create_input("Font Color", cur_layer.font_color, function ()
+                        {
+                            cur_layer.font_color = this.value;
+                            if (cur_layer.font_color.trim() === "") {
+                                cur_layer.font_color = "#000000";
+                            }
+                            show_font_changes(cur_layer);
+                        });
+                    }
+                    
+                    toolbox.style.display = "block";
+                },
+                hide: function ()
+                {
+                    ///TODO: Use css transitions to fade.
+                    toolbox.style.display = "none";
+                }
+            };
+        }());
+        
         text_manager = (function ()
         {
             var editing_layer,
@@ -465,7 +551,6 @@
             text_el.style.margin     = "0";
             text_el.style.position   = "absolute";
             text_el.style.background = "#FFF";
-            text_el.style.overflow   = "hidden";
             
             text_el.onmousedown = function (e)
             {
@@ -510,6 +595,8 @@
                         is_visible = true;
                         
                         text_el.focus();
+                        
+                        toolbox_manager.show("font", cur_layer);
                     }, 0);
                 },
                 hide_text: function ()
@@ -520,8 +607,16 @@
                         
                         resize_layer(editing_layer, false, {x: editing_layer.corner_points.x3, y: editing_layer.corner_points.y3}, {x1: "x3", y1: "y3", x2: "x4", y2: "y4", x3: "x1", y3: "y1", x4: "x2", y4: "y2"});
                         
+                        toolbox_manager.hide();
+                        
                         window.setTimeout(redraw, 0);
                     }
+                },
+                update_styles: function ()
+                {
+                    text_el.style.fontFamily = editing_layer.font_family;
+                    text_el.style.fontSize   = editing_layer.font_size;
+                    text_el.style.color      = editing_layer.font_color;
                 }
             };
         }());
@@ -574,9 +669,10 @@
                 obj.aspect_ratio      = obj.orig_aspect_ratio;
             } else {
                 obj.font_family = "sans";
-                obj.font_size = "18px";
-                obj.font_color = "#FF0000";
-                obj.weight = "normal";
+                obj.font_size   = "18px";
+                obj.font_color  = "#000000";
+                ///TODO: Add weight, italics, text-decoration, etc.
+                //obj.weight = "normal";
                 //obj.italics = "normal";
                 obj.canvas_font = obj.font_size + " " + obj.font_family;
                 obj.style_font  = "font-family:" + obj.font_family + ";font-size:" + obj.font_size + ";";
@@ -1438,7 +1534,7 @@
                         } else {
                             add_menu_item("Add Text", function ()
                             {
-                                var new_layer = create_new_layer("text", null, pos.x, pos.y, "Enter Text");
+                                var new_layer = create_new_layer("text", null, pos.x, pos.y, "Enter Text Here");
                                 layers[layers.length] = new_layer;
                                 ///NOTE: Since the page will be redrawn after editing, we do not need to redraw now.
                                 text_manager.edit_text(new_layer);
@@ -1501,6 +1597,7 @@
                 canvas_el.onmouseup(e);
             };
             
+            ///NOTE: This is prevented by toolbox.onmousedown() when clicking on the toolbox.
             document.onmousedown = function (e)
             {
                 /// This will hide the context menu even if the user clicked off of the canvas.
