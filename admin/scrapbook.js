@@ -64,7 +64,7 @@
                 var dim;
                 /// Remove old text, in any.
                 test_el.innerHTML = "";
-                test_el.style.cssText = "display: none;" + style + "; position: absolute; padding: 0; margin: 0; border: 0; white-space: pre-wrap";
+                test_el.style.cssText = "display: none;" + style + "; position: absolute; padding: 0; margin: 0; border: 0; white-space: nowrap";
                 
                 if (max_width) {
                     test_el.style.maxWidth = max_width;
