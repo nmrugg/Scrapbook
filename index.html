@@ -7,34 +7,37 @@
 <script language="JavaScript" type="text/javascript" src="unhosted/jsbn.js"></script>
 <script language="JavaScript" type="text/javascript" src="unhosted/unhosted.js"></script>
 <script>
+/*global unhosted, SubscribingPasswordMe */
+/*jslint white: true, browser: true, devel: true, forin: true, onevar: true, undef: true, nomen: true, newcap: true, immed: true */
+
 function load_scrapbook()
 {
-	unhosted.importSub(SubscribingPasswordMe, "hardCodedSub");
-	
-	(function ()
-	{
-	   var h1_el,
-	       i = 0,
-	       img_el,
-	       page_count = unhosted.get("hardCodedSub", "scrapbook.page_count");
-	   
-	   if (page_count < 1) {
-	       document.body.innerHTML = "Sorry, nothing to see here yet.";
-	   } else {
-	       h1_el = document.createElement("h1");
-	       h1_el.appendChild(document.createTextNode("Welcome to my scrapbook"));
-	       document.body.appendChild(h1_el);
-	       
-	       while (i < page_count) {
-	           img_el = document.createElement("img");
-	           
-	           ///FIXME: This should load the entire image, not the thumbnail, but it seems that browsers are not quite up to the task yet.
-	           img_el.src = unhosted.get("hardCodedSub", "scrapbook.page" + i + "_thumb").dataURI;
-	           document.body.appendChild(img_el);
-	           
-	           ++i;
-	       }
-	   }
+    unhosted.importSub(SubscribingPasswordMe, "hardCodedSub");
+    
+    (function ()
+    {
+        var h1_el,
+            i = 0,
+            img_el,
+            page_count = unhosted.get("hardCodedSub", "scrapbook.page_count");
+        
+        if (page_count < 1) {
+            document.body.innerHTML = "Sorry, nothing to see here yet.";
+        } else {
+            h1_el = document.createElement("h1");
+            h1_el.appendChild(document.createTextNode("Welcome to my scrapbook"));
+            document.body.appendChild(h1_el);
+            
+            while (i < page_count) {
+                img_el = document.createElement("img");
+                
+                ///FIXME: This should load the entire image, not the thumbnail, but it seems that browsers are not quite up to the task yet.
+                img_el.src = unhosted.get("hardCodedSub", "scrapbook.page" + i + "_thumb").dataURI;
+                document.body.appendChild(img_el);
+                
+                ++i;
+            }
+        }
     }());
 }
 </script>

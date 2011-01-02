@@ -1,4 +1,4 @@
-/*global FileReader, unhosted, window */
+/*global FileReader, unhosted, PublishingPasswordMe, window */
 /*jslint white: true, browser: true, devel: true, forin: true, onevar: true, undef: true, nomen: true, newcap: true, immed: true */
 
 (function ()
@@ -56,7 +56,7 @@
         canvas_el.setAttribute("height", canvas.height);
         
         
-        var unhosted_manager = (function ()
+        unhosted_manager = (function ()
         {
             /// Gain the ability to write (publish).
             unhosted.importPub(PublishingPasswordMe, "hardCodedPub");
@@ -1499,7 +1499,7 @@
                                 new_layers[new_count] = layers[which_layer];
                                 if (!moved_selected && which_layer === selected_layer) {
                                     selected_layer = new_count;
-                                    moved_selected = true
+                                    moved_selected = true;
                                 }
                                 ++new_count;
                             }
@@ -1513,7 +1513,7 @@
                                 new_layers[new_count] = layers[which_layer];
                                 if (!moved_selected && which_layer === selected_layer) {
                                     selected_layer = new_count;
-                                    moved_selected = true
+                                    moved_selected = true;
                                 }
                                 ++new_count;
                             }
@@ -1673,7 +1673,9 @@
                             function open_page(which_page)
                             {
                                 var count,
-                                    JSON = unhosted_manager.get_page(which_page);
+                                    JSON = unhosted_manager.get_page(which_page),
+                                    load_layer;
+                                
                                 layers = [];
                                 page_number = which_page;
                                 
@@ -1699,11 +1701,11 @@
                                         layers[layer_num] = create_new_layer(cur_layer.type, img, cur_layer.x, cur_layer.y);
                                         set_attributes(cur_layer, layers[layer_num]);
                                         load_layer(layer_num + 1);
-                                    }
+                                    };
                                     img.src = cur_layer.img.src;
                                 }
                                 
-                                function load_layer(layer_num)
+                                load_layer = function a(layer_num)
                                 {
                                     var cur_layer;
                                     
@@ -1728,7 +1730,7 @@
                                         set_attributes(cur_layer, layers[layer_num]);
                                         load_layer(layer_num + 1);
                                     }
-                                }
+                                };
                                 
                                 load_layer(0);
                             }
@@ -1769,11 +1771,11 @@
                                 }
                                 
                                 close_el.innerHTML = "X";
-                                //close_el.style.float = "right";
+                                
                                 close_el.onclick = function ()
                                 {
                                     container_el.style.display = "none";
-                                }
+                                };
                                 container_el.appendChild(close_el);
                                 
                                 container_el.style.display = "block";
@@ -1787,8 +1789,7 @@
                                 var little_canvas = document.createElement("canvas"),
                                     little_context,
                                     canvas_img    = new Image(),
-                                    tmp_selected  = selected_layer,
-                                    dataURI;
+                                    tmp_selected  = selected_layer;
                                 
                                 /// Hide the decorations.
                                 if (tmp_selected != -1) {
@@ -1809,7 +1810,7 @@
                                     
                                     /// Get the image
                                     callback(little_canvas.toDataURL("image/png"));
-                                }
+                                };
                                 
                                 canvas_img.src = canvas_el.toDataURL("image/png");
                                 
@@ -1823,7 +1824,6 @@
                             return function ()
                             {
                                 var cur_layer,
-                                    new_layer,
                                     layer_count  = layers.length,
                                     saved_layers = [],
                                     which_layer  = 0;
