@@ -2,4 +2,4 @@ This is my entry for the [Unhosted Hacky Holidays contest](http://www.unhosted.o
 
 Right now, it is basically alpha quality, but I plan to continue developing it.
 
-I am resleasing the Scrapbook code under the [GNU AFFERO GENERAL PUBLIC LICENSE v3 (AGPLv3)](http://www.opensource.org/licenses/agpl-v3.html).  The Unhosted files have their own licenses.
+I am resleasing the Scrapbook code under the [GNU Affero General Public License v3 (AGPLv3)](http://www.opensource.org/licenses/agpl-v3.html).  The Unhosted files have their own licenses.
