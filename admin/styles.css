@@ -15,7 +15,7 @@ menu {
             border-radius: 4px;
     
     background-image: -moz-linear-gradient(top, rgba(255, 255, 255, .3), rgba(153, 153, 153, 1)); /* FF3.6 */
-    background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #FFFFFF),color-stop(1, #999999)); /* Saf4+, Chrome */
+    background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, rgba(255, 255, 255, .3)),color-stop(1, rgba(153, 153, 153, 1))); /* Saf4+, Chrome */
     
     font-family: verdana, arial, sans;
     
