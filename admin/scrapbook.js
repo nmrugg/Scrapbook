@@ -1,4 +1,4 @@
-/*global window, FileReader */
+/*global FileReader, unhosted, window */
 /*jslint white: true, browser: true, devel: true, forin: true, onevar: true, undef: true, nomen: true, newcap: true, immed: true */
 
 (function ()
@@ -16,6 +16,8 @@
             
             layers = [],
             
+            page_number = -1,
+                        
             hover_layer    = -1,
             last_layer     = -1,
             selected_layer = -1,
@@ -39,6 +41,7 @@
             resize_layer,
             text_manager,
             toolbox_manager,
+            unhosted_manager,
             
             /// Misc
             PI  = Math.PI,
@@ -51,6 +54,46 @@
         /// Width and height must be set with setAttribute() to avoid stretching.
         canvas_el.setAttribute("width",  canvas.width);
         canvas_el.setAttribute("height", canvas.height);
+        
+        
+        var unhosted_manager = (function ()
+        {
+            /// Gain the ability to write (publish).
+            unhosted.importPub(PublishingPasswordMe, "hardCodedPub");
+            /// Gain the ability to read (subscribe).
+            unhosted.importSub(PublishingPasswordMe, "hardCodedSub");
+            
+            function get_page_count()
+            {
+                var page_count = unhosted.get("hardCodedSub", "scrapbook.page_count");
+                
+                if (page_count === null) {
+                    page_count = 0;
+                }
+                return page_count;
+            }
+            
+            
+            return {
+                open: function (which_page)
+                {
+                    return unhosted.get("hardCodedSub", "scrapbook.page" + which_page + "_JSON");
+                },
+                save: function (JSON, dataURI)
+                {
+                    if (page_number < 0) {
+                        page_number = get_page_count();
+                        
+                        unhosted.set("hardCodedSub", "scrapbook.page_count", page_number + 1);
+                    }
+                    
+                    unhosted.set("hardCodedSub", "scrapbook.page" + page_number + "_JSON",  JSON);
+                    unhosted.set("hardCodedSub", "scrapbook.page" + page_number + "_image", dataURI);
+                }
+            };
+            
+        }());
+        
         
         get_text_dimensions = (function ()
         {
@@ -1401,9 +1444,14 @@
                 
                 document.body.insertBefore(menu_el, null);
                 
-                function add_menu_item(text, click_func)
+                function add_menu_item(text, click_func, break_above)
                 {
                     var el;
+                    
+                    if (break_above) {
+                        el = document.createElement("hr");
+                        menu_el.insertBefore(el, null);
+                    }
                     
                     el = document.createElement("div");
                     el.innerHTML = text;
@@ -1577,6 +1625,85 @@
                         }
                         
                         
+                        add_menu_item("New", function ()
+                        {
+                            if (layers.length > 0) {
+                                if (confirm("Are you sure you want to start over?")) {
+                                    layers = [];
+                                    page_number = -1;
+                                    redraw();
+                                }
+                            }
+                        }, true);
+                        
+                        add_menu_item("Open", function ()
+                        {
+                            alert(unhosted_manager.open(0));
+                        });
+                        
+                        add_menu_item("Save", function ()
+                        {
+                            var cur_layer,
+                                new_layer,
+                                layer_count  = layers.length,
+                                saved_layers = [],
+                                which_layer  = 0;
+                            
+                            while (which_layer < layer_count) {
+                                cur_layer = layers[which_layer];
+                                
+                                saved_layers[which_layer] = {
+                                    type: cur_layer.type,
+                                    
+                                    x: cur_layer.x,
+                                    y: cur_layer.y,
+                                    
+                                    width:  cur_layer.width,
+                                    height: cur_layer.height,
+                                    
+                                    angle: cur_layer.angle,
+                                    
+                                    composite: cur_layer.composite,
+                                    opacity:   cur_layer.opacity
+                                };
+                                
+                                if (cur_layer.type == "img") {
+                                    saved_layers[which_layer].img = {src: cur_layer.img.src};
+                                } else {
+                                    saved_layers[which_layer].text = cur_layer.text;
+                                    
+                                    saved_layers[which_layer].font_family = cur_layer.font_family;
+                                    saved_layers[which_layer].font_size   = cur_layer.font_size;
+                                    saved_layers[which_layer].font_color  = cur_layer.font_color;
+                                }
+                                
+                                ++which_layer;
+                            }
+                            
+                            unhosted_manager.save(saved_layers, (function ()
+                            {
+                                var tmp_selected = selected_layer,
+                                    dataURI;
+                                
+                                /// Hide the decorations.
+                                if (tmp_selected != -1) {
+                                    selected_layer = -1;
+                                    redraw();
+                                }
+                                
+                                /// Get the image
+                                dataURI = canvas_el.toDataURL("image/png");
+                                
+                                /// Reselect the layer.
+                                if (tmp_selected != -1) {
+                                    selected_layer = tmp_selected;
+                                    redraw();
+                                }
+                                
+                                return dataURI;
+                            }()));
+                        });
+                        
                         menu_el.style.cssText = "display: block; position: absolute; left: " + (pos.x + canvas_el.offsetLeft) + "px; top: " + (pos.y + canvas_el.offsetTop) + "px;";
                     },
                     hide_menu: function ()
@@ -1724,4 +1851,7 @@
     canvas_el.addEventListener("dragexit",  ignore_event, false);
     canvas_el.addEventListener("dragover",  ignore_event, false);
     canvas_el.addEventListener("drop",      drop,         false);
+    
+    
+
 }());
