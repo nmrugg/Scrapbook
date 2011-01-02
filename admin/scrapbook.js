@@ -75,6 +75,19 @@
             
             
             return {
+                list_pages: function ()
+                {
+                    var count = get_page_count(),
+                        i = 0,
+                        pages = [];
+                    
+                    while (i < count) {
+                        pages[i] = unhosted.get("hardCodedSub", "scrapbook.page" + i + "_image").dataURI;
+                        ++i;
+                    }
+                    
+                    return pages;
+                },
                 open: function (which_page)
                 {
                     return unhosted.get("hardCodedSub", "scrapbook.page" + which_page + "_JSON");
@@ -88,7 +101,7 @@
                     }
                     
                     unhosted.set("hardCodedSub", "scrapbook.page" + page_number + "_JSON",  JSON);
-                    unhosted.set("hardCodedSub", "scrapbook.page" + page_number + "_image", dataURI);
+                    unhosted.set("hardCodedSub", "scrapbook.page" + page_number + "_image", {dataURI: dataURI});
                 }
             };
             
@@ -1636,53 +1649,52 @@
                             }
                         }, true);
                         
-                        add_menu_item("Open", function ()
+                        add_menu_item("Open", (function ()
                         {
-                            alert(unhosted_manager.open(0));
-                        });
-                        
-                        add_menu_item("Save", function ()
-                        {
-                            var cur_layer,
-                                new_layer,
-                                layer_count  = layers.length,
-                                saved_layers = [],
-                                which_layer  = 0;
+                            var container_el = document.createElement("div");
                             
-                            while (which_layer < layer_count) {
-                                cur_layer = layers[which_layer];
-                                
-                                saved_layers[which_layer] = {
-                                    type: cur_layer.type,
-                                    
-                                    x: cur_layer.x,
-                                    y: cur_layer.y,
-                                    
-                                    width:  cur_layer.width,
-                                    height: cur_layer.height,
-                                    
-                                    angle: cur_layer.angle,
-                                    
-                                    composite: cur_layer.composite,
-                                    opacity:   cur_layer.opacity
-                                };
-                                
-                                if (cur_layer.type == "img") {
-                                    saved_layers[which_layer].img = {src: cur_layer.img.src};
-                                } else {
-                                    saved_layers[which_layer].text = cur_layer.text;
-                                    
-                                    saved_layers[which_layer].font_family = cur_layer.font_family;
-                                    saved_layers[which_layer].font_size   = cur_layer.font_size;
-                                    saved_layers[which_layer].font_color  = cur_layer.font_color;
-                                }
-                                
-                                ++which_layer;
-                            }
+                            container_el.style.display = "none";
+                            container_el.style.position = "fixed";
                             
-                            unhosted_manager.save(saved_layers, (function ()
+                            container_el.style.top = "20px";
+                            
+                            document.body.appendChild(container_el);
+                            
+                            return function ()
                             {
-                                var tmp_selected = selected_layer,
+                                var i = 0,
+                                    image_list = unhosted_manager.list_pages(),
+                                    image_list_count,
+                                    img;
+                                
+                                image_list_count = image_list.length;
+                                
+                                if (image_list_count > 0) {
+                                    container_el.innerHTML = "";
+                                    
+                                    while (i < image_list_count) {
+                                        img = document.createElement("img");
+                                        
+                                        img.src = image_list[i];
+                                        
+                                        container_el.appendChild(img);
+                                        ++i;
+                                    }
+                                } else {
+                                    container_el.innerHTML = "No pages saved.";
+                                }
+                                container_el.style.display = "block";
+                            };
+                        }()));
+                        
+                        add_menu_item("Save", (function ()
+                        {
+                            function get_thumbnail(callback)
+                            {
+                                var little_canvas = document.createElement("canvas"),
+                                    little_context,
+                                    canvas_img    = new Image(),
+                                    tmp_selected  = selected_layer,
                                     dataURI;
                                 
                                 /// Hide the decorations.
@@ -1691,18 +1703,76 @@
                                     redraw();
                                 }
                                 
-                                /// Get the image
-                                dataURI = canvas_el.toDataURL("image/png");
+                                canvas_img.onload = function ()
+                                {
+                                    little_context = little_canvas.getContext("2d");
+                                    
+                                    little_canvas.setAttribute("width",  133);
+                                    little_canvas.setAttribute("height", 100);
+                                    
+                                    ///TODO: Since this can be very resource intensive, it would be nice if this could be done in a worker.
+                                    ///TODO: Could also crop it.
+                                    little_context.drawImage(canvas_img, 0, 0, 133, 100);
+                                    
+                                    /// Get the image
+                                    callback(little_canvas.toDataURL("image/png"));
+                                }
+                                
+                                canvas_img.src = canvas_el.toDataURL("image/png");
                                 
                                 /// Reselect the layer.
                                 if (tmp_selected != -1) {
                                     selected_layer = tmp_selected;
                                     redraw();
                                 }
+                            }
+                            
+                            return function ()
+                            {
+                                var cur_layer,
+                                    new_layer,
+                                    layer_count  = layers.length,
+                                    saved_layers = [],
+                                    which_layer  = 0;
                                 
-                                return dataURI;
-                            }()));
-                        });
+                                while (which_layer < layer_count) {
+                                    cur_layer = layers[which_layer];
+                                    
+                                    saved_layers[which_layer] = {
+                                        type: cur_layer.type,
+                                        
+                                        x: cur_layer.x,
+                                        y: cur_layer.y,
+                                        
+                                        width:  cur_layer.width,
+                                        height: cur_layer.height,
+                                        
+                                        angle: cur_layer.angle,
+                                        
+                                        composite: cur_layer.composite,
+                                        opacity:   cur_layer.opacity
+                                    };
+                                    
+                                    if (cur_layer.type == "img") {
+                                        saved_layers[which_layer].img = {src: cur_layer.img.src};
+                                    } else {
+                                        saved_layers[which_layer].text = cur_layer.text;
+                                        
+                                        saved_layers[which_layer].font_family = cur_layer.font_family;
+                                        saved_layers[which_layer].font_size   = cur_layer.font_size;
+                                        saved_layers[which_layer].font_color  = cur_layer.font_color;
+                                    }
+                                    
+                                    ++which_layer;
+                                }
+                                
+                                //unhosted_manager.save(saved_layers, get_thumbnail());
+                                get_thumbnail(function (thumbnail)
+                                {
+                                    unhosted_manager.save(saved_layers, thumbnail);
+                                });
+                            };
+                        }()));
                         
                         menu_el.style.cssText = "display: block; position: absolute; left: " + (pos.x + canvas_el.offsetLeft) + "px; top: " + (pos.y + canvas_el.offsetTop) + "px;";
                     },
