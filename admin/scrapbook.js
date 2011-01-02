@@ -553,7 +553,6 @@
             text_el.style.border     = "0";
             text_el.style.margin     = "0";
             text_el.style.position   = "absolute";
-            text_el.style.background = "#FFF";
             
             text_el.onmousedown = function (e)
             {
@@ -573,12 +572,21 @@
                         text_el.style.left = ((cur_layer.x + canvas_el.offsetLeft) - 1) + "px";
                         text_el.style.top  = ((cur_layer.y + canvas_el.offsetTop)  - (parseInt(cur_layer.font_size, 10) * 0.15)) + "px";
                         
-                        text_el.style.width  = cur_layer.width  + "px";
+                        /// Add a little padding (+2) to make sure that the textarea does not wrap.
+                        text_el.style.width  = (cur_layer.width + 2)  + "px";
                         text_el.style.height = cur_layer.height + "px";
                         
                         text_el.style.fontFamily = cur_layer.font_family;
                         text_el.style.fontSize   = cur_layer.font_size;
                         text_el.style.color      = cur_layer.font_color;
+                        
+                        ///TODO: Figure out if the color is even close to white.
+                        if (cur_layer.font_color == "#FFFFFF") {
+                            /// Make the background black because the font is white.
+                            text_el.style.background = "#000";
+                        } else {
+                            text_el.style.background = "#FFF";
+                        }
                         
                         text_el.style.transform       = "rotate(" + cur_layer.angle + "rad)";
                         text_el.style.MozTransform    = "rotate(" + cur_layer.angle + "rad)";
