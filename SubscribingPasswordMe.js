@@ -6,4 +6,5 @@ var SubscribingPasswordMe = {
 	"r":"7db31",
 	"c":"example.unhosted.org",
 	"n":"ddf563c24da318727b060307da3ace0c46e357c81d3137d79f2bf1125ec240980aa5d7aaa963a61028cb876416a181654ed6996cd9bb40449b0bd88eb8e42ce7",
-	"s":"c6f7e7612b256f7a943fa45e72b56dcd"};
+	"s":"c6f7e7612b256f7a943fa45e72b56dcd"
+};
