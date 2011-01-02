@@ -88,7 +88,7 @@
                     
                     return pages;
                 },
-                open: function (which_page)
+                get_page: function (which_page)
                 {
                     return unhosted.get("hardCodedSub", "scrapbook.page" + which_page + "_JSON");
                 },
@@ -1651,7 +1651,7 @@
                         
                         add_menu_item("Open", (function ()
                         {
-                            var container_el = document.createElement("div");
+                            var container_el = document.createElement("menu");
                             
                             container_el.style.display = "none";
                             container_el.style.position = "fixed";
@@ -1660,29 +1660,112 @@
                             
                             document.body.appendChild(container_el);
                             
+                            function open_page(which_page)
+                            {
+                                var count,
+                                    JSON = unhosted_manager.get_page(which_page);
+                                layers = [];
+                                page_number = which_page;
+                                
+                                count = JSON.length;
+                                
+                                
+                                function set_attributes(JSON_layer, new_layer)
+                                {
+                                    resize_layer(new_layer, false, {x: new_layer.corner_points.x1 + JSON_layer.width, y: new_layer.corner_points.y1 + JSON_layer.height}, {x1: "x3", y1: "y3", x2: "x4", y2: "y4", x3: "x1", y3: "y1", x4: "x2", y4: "y2"});
+                                    
+                                    rotate(new_layer, JSON_layer.angle);
+                                    
+                                    new_layer.composite = JSON_layer.composite;
+                                    new_layer.opacity   = JSON_layer.opacity;
+                                }
+                                
+                                function add_img(cur_layer, layer_num)
+                                {
+                                    var img = new Image();
+                                    
+                                    img.onload = function ()
+                                    {
+                                        layers[layer_num] = create_new_layer(cur_layer.type, img, cur_layer.x, cur_layer.y);
+                                        set_attributes(cur_layer, layers[layer_num]);
+                                        load_layer(layer_num + 1);
+                                    }
+                                    img.src = cur_layer.img.src;
+                                }
+                                
+                                function load_layer(layer_num)
+                                {
+                                    var cur_layer;
+                                    
+                                    if (layer_num >= count) {
+                                        /// No more layers.
+                                        redraw();
+                                        return;
+                                    }
+                                    cur_layer = JSON[layer_num];
+                                    
+                                    if (cur_layer.type == "img") {
+                                        add_img(cur_layer, layer_num);
+                                    } else {
+                                        layers[layer_num] = create_new_layer(cur_layer.type, "", cur_layer.x, cur_layer.y, cur_layer.text);
+                                        
+                                        layers[layer_num].font_family = cur_layer.font_family;
+                                        layers[layer_num].font_size   = cur_layer.font_size;
+                                        layers[layer_num].font_color  = cur_layer.font_color;
+                                        layers[layer_num].canvas_font = cur_layer.font_size + " " + cur_layer.font_family;
+                                        layers[layer_num].style_font  = "font-family:" + cur_layer.font_family + ";font-size:" + cur_layer.font_size + ";";
+                                        
+                                        set_attributes(cur_layer, layers[layer_num]);
+                                        load_layer(layer_num + 1);
+                                    }
+                                }
+                                
+                                load_layer(0);
+                            }
+                            
                             return function ()
                             {
-                                var i = 0,
+                                var close_el = document.createElement("span"),
+                                    i = 0,
                                     image_list = unhosted_manager.list_pages(),
-                                    image_list_count,
-                                    img;
+                                    image_list_count;
                                 
                                 image_list_count = image_list.length;
+                                
+                                function add_img(dataURI, which_page)
+                                {
+                                    var img = document.createElement("img");
+                                    
+                                    img.src = dataURI;
+                                    
+                                    img.onclick = function ()
+                                    {
+                                        container_el.style.display = "none";
+                                        open_page(which_page);
+                                    };
+                                    
+                                    container_el.appendChild(img);
+                                }
                                 
                                 if (image_list_count > 0) {
                                     container_el.innerHTML = "";
                                     
                                     while (i < image_list_count) {
-                                        img = document.createElement("img");
-                                        
-                                        img.src = image_list[i];
-                                        
-                                        container_el.appendChild(img);
+                                        add_img(image_list[i], i);
                                         ++i;
                                     }
                                 } else {
                                     container_el.innerHTML = "No pages saved.";
                                 }
+                                
+                                close_el.innerHTML = "X";
+                                //close_el.style.float = "right";
+                                close_el.onclick = function ()
+                                {
+                                    container_el.style.display = "none";
+                                }
+                                container_el.appendChild(close_el);
+                                
                                 container_el.style.display = "block";
                             };
                         }()));
@@ -1766,7 +1849,6 @@
                                     ++which_layer;
                                 }
                                 
-                                //unhosted_manager.save(saved_layers, get_thumbnail());
                                 get_thumbnail(function (thumbnail)
                                 {
                                     unhosted_manager.save(saved_layers, thumbnail);

@@ -7,14 +7,36 @@
 <script language="JavaScript" type="text/javascript" src="unhosted/jsbn.js"></script>
 <script language="JavaScript" type="text/javascript" src="unhosted/unhosted.js"></script>
 <script>
-function loadBlogPost() {
+function load_scrapbook()
+{
 	unhosted.importSub(SubscribingPasswordMe, "hardCodedSub");
-	document.getElementById("blogpost").innerHTML= unhosted.get("hardCodedSub", "myFirstUnhostedBlogPost");
+	
+	(function ()
+	{
+	   var h1_el,
+	       i = 0,
+	       img_el,
+	       page_count = unhosted.get("hardCodedSub", "scrapbook.page_count");
+	   
+	   if (page_count < 1) {
+	       document.body.innerHTML = "Sorry, nothing to see here yet.";
+	   } else {
+	       h1_el = document.createElement("h1");
+	       h1_el.appendChild(document.createTextNode("Welcome to my scrapbook"));
+	       document.body.appendChild(h1_el);
+	       
+	       while (i < page_count) {
+	           img_el = document.createElement("img");
+	           
+	           img_el.src = unhosted.get("hardCodedSub", "scrapbook.page" + i + "_image").dataURI;
+	           document.body.appendChild(img_el);
+	           
+	           ++i;
+	       }
+	   }
+    }());
 }
 </script>
-<body onload="loadBlogPost();">
-<H2>This code is only for demonstration and not safe to run in production.</H2>
-<H2>Only run it in a local development environment, never on a public IP or production server.</H2>
-<div id="blogpost">Loading unhosted json...</div>
+<body onload="load_scrapbook();">
 </body>
 </html>

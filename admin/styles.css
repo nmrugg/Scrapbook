@@ -30,3 +30,8 @@ menu div:hover {
     background: rgba(0, 136, 255, 0.898);
     color: #FFF;
 }
+
+menu img:hover {
+    cursor: pointer;
+    background: rgba(0, 136, 255, 0.3);
+}
