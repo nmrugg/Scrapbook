@@ -82,7 +82,7 @@
                         pages = [];
                     
                     while (i < count) {
-                        pages[i] = unhosted.get("hardCodedSub", "scrapbook.page" + i + "_image").dataURI;
+                        pages[i] = unhosted.get("hardCodedSub", "scrapbook.page" + i + "_thumb").dataURI;
                         ++i;
                     }
                     
@@ -101,7 +101,17 @@
                     }
                     
                     unhosted.set("hardCodedSub", "scrapbook.page" + page_number + "_JSON",  JSON);
-                    unhosted.set("hardCodedSub", "scrapbook.page" + page_number + "_image", {dataURI: dataURI});
+                    window.setTimeout(function ()
+                    {
+                        unhosted.set("hardCodedSub", "scrapbook.page" + page_number + "_thumb", {dataURI: dataURI});
+                        ///FIXME: We should save the entire image, but it seems that browsers just aren't up to the task yet.
+                        /*
+                        window.setTimeout(function ()
+                        {
+                            unhosted.set("hardCodedSub", "scrapbook.page" + page_number + "_image", {dataURI: canvas_el.toDataURL("image/png")});
+                        }, 0);
+                        */
+                    }, 0);
                 }
             };
             
