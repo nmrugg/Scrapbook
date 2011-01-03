@@ -17,7 +17,7 @@
             layers = [],
             
             page_number = -1,
-                        
+            
             hover_layer    = -1,
             last_layer     = -1,
             selected_layer = -1,
@@ -781,7 +781,7 @@
             
             return obj;
         }
-                
+        
         
         function rotate(cur_layer, angle)
         {
@@ -1169,7 +1169,7 @@
                             change_x = true;
                         }
                     }
-                                            
+                    
                     if (change_x || change_y) {
                         /// Rotate new points.
                         new_pos.x = Math.round(((cosine * x1 - sine   * y1) + center_x) * 100) / 100;
@@ -1989,7 +1989,7 @@
             reader.onprogress     = handleReadernotification;
             reader.onloadstart    = handleReadernotification;
             reader.onloadend      = function (e2)
-            {   
+            {
                 var cur_pos = canvas_manager.get_relative_x_y(e);
                 /// offset_count moves the images over slightly when dropping more than one at a time in order to see them all  .
                 canvas_manager.add_image(e2.target.result, cur_pos.x + (i * 15), cur_pos.y + (i * 15));
@@ -2013,7 +2013,4 @@
     canvas_el.addEventListener("dragexit",  ignore_event, false);
     canvas_el.addEventListener("dragover",  ignore_event, false);
     canvas_el.addEventListener("drop",      drop,         false);
-    
-    
-
 }());
