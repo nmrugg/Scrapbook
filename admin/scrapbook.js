@@ -78,11 +78,17 @@
                 list_pages: function ()
                 {
                     var count = get_page_count(),
+                        data_obj,
                         i = 0,
+                        page = 0,
                         pages = [];
                     
                     while (i < count) {
-                        pages[i] = unhosted.get("hardCodedSub", "scrapbook.page" + i + "_thumb").dataURI;
+                        data_obj = unhosted.get("hardCodedSub", "scrapbook.page" + i + "_thumb");
+                        if (typeof data_obj != "undefined" && data_obj !== null && data_obj.dataURI) {
+                            pages[page] = data_obj.dataURI;
+                            ++page;
+                        }
                         ++i;
                     }
                     
