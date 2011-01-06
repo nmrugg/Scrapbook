@@ -16,7 +16,8 @@ function load_scrapbook()
     
     (function ()
     {
-        var h1_el,
+        var data_obj,
+            h1_el,
             i = 0,
             img_el,
             page_count = unhosted.get("hardCodedSub", "scrapbook.page_count");
@@ -32,9 +33,11 @@ function load_scrapbook()
                 img_el = document.createElement("img");
                 
                 ///FIXME: This should load the entire image, not the thumbnail, but it seems that browsers are not quite up to the task yet.
-                img_el.src = unhosted.get("hardCodedSub", "scrapbook.page" + i + "_thumb").dataURI;
-                document.body.appendChild(img_el);
-                
+                data_obj = unhosted.get("hardCodedSub", "scrapbook.page" + i + "_thumb");
+                if (typeof data_obj != "undefined" && data_obj !== null && data_obj.dataURI) {
+                    img_el.src = data_obj.dataURI;
+                    document.body.appendChild(img_el);
+                }
                 ++i;
             }
         }
